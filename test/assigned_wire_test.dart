@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:is_airlock_api/is_airlock_api.dart' show JourneyUser, LoopUser;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 import 'package:is_shapes/is_shapes.dart';
 import 'package:test/test.dart';

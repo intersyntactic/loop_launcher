@@ -7,7 +7,8 @@ import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_shapes/is_shapes.dart' show JourneyId, JourneyPathId;
 
 import 'assigned.dart';
-import 'pool_user.dart';
+
+import 'package:is_airlock_api/is_airlock_api.dart' show JourneyUser, LoopUser;
 
 /// The loop users and journey users made for loop_launcher, and who holds
 /// each. A journey holds one journey user for all its paths; each path holds

@@ -105,7 +105,14 @@ Future<void> runLoopLauncher({
       say('${path.hex}: its programs cannot run: ${e.why}');
       return;
     }
-    final answer = await pathStarted(PathStarted(path, rules: rules));
+    final answer = await pathStarted(
+      PathStarted(
+        path,
+        rules: rules,
+        loopUser: assigned.loopUser,
+        journeyUser: assigned.journeyUser,
+      ),
+    );
     switch (answer) {
       case Rejected(:final why):
         say('${path.hex}: the airlock rejected it: $why');

@@ -24,7 +24,9 @@ started, it:
 2. opens the journey user's programs (`program@journey-<n>`), which the
    airlock's program driver connects to;
 3. tells the airlock the path started (`PathStarted`, is_airlock_api), under
-   the rules the entry that started it recorded, and gets back
+   the rules the entry that started it recorded, with its two users: the
+   airlock takes the path's proposals only from its loop user, and has the
+   program driver run its programs as its journey user. It gets back
    `Ready(token)` or `Rejected`;
 4. starts the path's loop (`agent-loop@loop-<n>`) with that token.
 
@@ -60,5 +62,3 @@ user is handed out again.
 - **A stop.** `PathStarted.stopped` keeps the person's stop across a
   restart only if the record holds it; nothing does yet, so it is sent
   `false`.
-- **The journey user in `PathStarted`**, for the airlock to hand the program
-  driver, which waits on is_airlock_api 0.5.0.

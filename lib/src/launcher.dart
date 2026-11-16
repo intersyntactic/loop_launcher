@@ -2,11 +2,10 @@
 /// starting a path's loop as its loop user.
 library;
 
-import 'package:is_airlock_api/is_airlock_api.dart' show PathToken;
+import 'package:is_airlock_api/is_airlock_api.dart'
+    show JourneyUser, LoopUser, PathToken;
 import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_shapes/is_shapes.dart' show JourneyPathId;
-
-import 'pool_user.dart';
 
 /// Starts and stops what runs as the pools' users. On the box, each call
 /// starts or stops fixed units that polkit lets loop_launcher's user start
