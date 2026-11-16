@@ -1,5 +1,5 @@
-/// Running loop_launcher: following the record, and bringing up each
-/// journey path the docking port starts.
+/// Running loop_launcher: subscribing to the record, and bringing up each
+/// journey path the docking station starts.
 library;
 
 import 'dart:typed_data';
@@ -24,11 +24,12 @@ import 'assigned.dart';
 import 'launcher.dart';
 import 'pools.dart';
 
-/// Runs loop_launcher until [follow]'s stream ends, which it never should:
-/// the caller treats a return as the record going away.
+/// Runs loop_launcher until [subscribe]'s stream ends, which it never
+/// should: the caller treats a return as the record going away.
 ///
-/// It follows the record from its start for the docking port's `admitted`
-/// entries and its own `assigned` ones. Once [follow] has caught up, it
+/// It subscribes to the record from its start for the docking station's
+/// `admitted` entries and its own `assigned` ones. Once [subscribe] has
+/// caught up, it
 /// brings up every path started, in the record's order, and then each one
 /// as it starts. Bringing up a path, on this start or the next, is the same
 /// steps, each skipped when already done:
@@ -51,7 +52,7 @@ import 'pools.dart';
 /// ends a journey, so [Pools.ended] is never called and a pool user, once
 /// handed out, is held until it does.
 Future<void> runLoopLauncher({
-  required Stream<FollowItem> Function(Set<Kind> kinds) follow,
+  required Stream<FollowItem> Function(Set<Kind> kinds) subscribe,
   required Future<EntryHash> Function(
     Kind kind,
     EntryHash? follows,
@@ -109,7 +110,7 @@ Future<void> runLoopLauncher({
   }
 
   var caughtUp = false;
-  await for (final item in follow({DecisionKind.admitted, Assigned.kind})) {
+  await for (final item in subscribe({DecisionKind.admitted, Assigned.kind})) {
     switch (item) {
       case JournalEntryFrame(:final kind, :final hash, :final body)
           when kind == Assigned.kind:

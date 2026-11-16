@@ -2,15 +2,16 @@
 
 Launches each journey path's agent loop. It is a core service with an OS
 user of its own, `loop-launcher`, and it holds the model sign-ins. The docking
-port, which parses bytes strangers sent, does not: a process that holds
+station, which parses bytes strangers sent, does not: a process that holds
 secrets never parses strangers' bytes, and the record is the only channel
 between the two.
 
 ## What it does
 
-It follows the record from its start for the docking port's `admitted`
-entries that start a journey path, and its own `assigned` entries. For each
-path started, it:
+It subscribes to the record from its start (every entry so far, then each
+new one as it is recorded) for the docking station's `admitted` entries
+that start a journey path, and its own `assigned` entries. For each path
+started, it:
 
 1. hands the path two users from pools made ahead of time on the box (Nick,
    16 Nov): a **loop user** (`loop-<n>`), one per path, which runs the path's
