@@ -2,7 +2,7 @@ name: is_loop_launcher
 description: >-
   Launches each journey path's agent loop: it subscribes to the record for
   the docking station's admissions that start a journey path, hands the path a loop
-  user and a journey user from their pools, records that handout, and
+  user and a suit from their pools, records that handout, and
   starts the path's loop with the sign-ins its rules allow.
 version: 0.1.0-dev
 repository: https://github.com/intersyntactic/loop_launcher
@@ -20,7 +20,7 @@ dependencies:
   is_airlock_api:
     git:
       url: https://github.com/intersyntactic/airlock_api.git
-      ref: dbf9a44b9b7b8eb467b4df24f017a01fbe9e7c59
+      ref: 3c07335168e0ef4468ab602403f2d99a73fa51e2
   is_docking_station:
     git:
       url: https://github.com/intersyntactic/docking_station.git

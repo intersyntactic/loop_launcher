@@ -8,25 +8,20 @@ import 'package:is_shapes/is_shapes.dart' show JourneyId, JourneyPathId;
 
 import 'assigned.dart';
 
-import 'package:is_airlock_api/is_airlock_api.dart' show JourneyUser, LoopUser;
+import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
 
-/// The loop users and journey users made for loop_launcher, and who holds
-/// each. A journey holds one journey user for all its paths; each path holds
-/// a loop user of its own. Rebuilt from the record's `assigned` entries on
-/// every start, so it is never stored anywhere else.
+/// The loop users and suits made for loop_launcher, and who holds each.
+/// Each path holds a loop user and a suit of its own, and no two paths
+/// share either (Nick, 16 Nov: every path wears a suit). Rebuilt from the
+/// record's `assigned` entries on every start, so it is never stored
+/// anywhere else.
 final class Pools {
-  Pools({
-    required Iterable<LoopUser> loopUsers,
-    required Iterable<JourneyUser> journeyUsers,
-  }) : _freeLoops = SplayTreeSet.of(loopUsers, (a, b) => a.n.compareTo(b.n)),
-       _freeJourneys = SplayTreeSet.of(
-         journeyUsers,
-         (a, b) => a.n.compareTo(b.n),
-       );
+  Pools({required Iterable<LoopUser> loopUsers, required Iterable<Suit> suits})
+    : _freeLoops = SplayTreeSet.of(loopUsers, (a, b) => a.n.compareTo(b.n)),
+      _freeSuits = SplayTreeSet.of(suits, (a, b) => a.n.compareTo(b.n));
 
   final SplayTreeSet<LoopUser> _freeLoops;
-  final SplayTreeSet<JourneyUser> _freeJourneys;
-  final _journeyUsers = <JourneyId, JourneyUser>{};
+  final SplayTreeSet<Suit> _freeSuits;
   final _paths = <JourneyPathId, Held>{};
 
   /// What [path] was handed, if it has been.
@@ -38,50 +33,31 @@ final class Pools {
   /// Takes [assigned], recorded at [root], as held.
   void take(Assigned assigned, EntryHash root) {
     _freeLoops.remove(assigned.loopUser);
-    _freeJourneys.remove(assigned.journeyUser);
-    _journeyUsers[assigned.journey] = assigned.journeyUser;
+    _freeSuits.remove(assigned.suit);
     _paths[assigned.journeyPath] = Held(assigned, root);
   }
 
-  /// The users [path], in [journey], would be handed: the journey's own
-  /// journey user if it has one, else a free one, which has to be wiped
-  /// before it is handed out; and a free loop user. Takes nothing: the
-  /// handout is held once its `assigned` entry is recorded and [take]n.
-  Handout handout(JourneyPathId path, JourneyId journey) {
-    final loop = _freeLoops.firstOrNull;
-    if (loop == null) return const Exhausted('no loop user is free');
-    if (_journeyUsers[journey] case final held?) {
-      return Free(
-        Assigned(
-          journeyPath: path,
-          journey: journey,
-          loopUser: loop,
-          journeyUser: held,
-        ),
-        wipeFirst: false,
-      );
-    }
-    return switch (_freeJourneys.firstOrNull) {
-      final user? => Free(
-        Assigned(
-          journeyPath: path,
-          journey: journey,
-          loopUser: loop,
-          journeyUser: user,
-        ),
-        wipeFirst: true,
-      ),
-      null => const Exhausted('no journey user is free'),
-    };
-  }
+  /// The users [path], in [journey], would be handed: a free loop user and
+  /// a free suit, which has to be wiped before it is handed out. Takes
+  /// nothing: the handout is held once its `assigned` entry is recorded and
+  /// [take]n.
+  Handout handout(JourneyPathId path, JourneyId journey) => switch ((
+    _freeLoops.firstOrNull,
+    _freeSuits.firstOrNull,
+  )) {
+    (null, _) => const Exhausted('no loop user is free'),
+    (_, null) => const Exhausted('no suit is free'),
+    (final loop?, final suit?) => Free(
+      Assigned(journeyPath: path, journey: journey, loopUser: loop, suit: suit),
+    ),
+  };
 
-  /// [journey] has ended: its journey user and its paths' loop users are
-  /// free again.
+  /// [journey] has ended: its paths' loop users and suits are free again.
   void ended(JourneyId journey) {
-    if (_journeyUsers.remove(journey) case final user?) _freeJourneys.add(user);
     _paths.removeWhere((_, held) {
       if (held.assigned.journey != journey) return false;
       _freeLoops.add(held.assigned.loopUser);
+      _freeSuits.add(held.assigned.suit);
       return true;
     });
   }
@@ -101,13 +77,11 @@ sealed class Handout {
   const Handout();
 }
 
-/// [assigned] can be handed out. [wipeFirst] when its journey user is new
-/// to the journey: its home is emptied before anything else is done.
+/// [assigned] can be handed out, once its suit's home is emptied.
 final class Free extends Handout {
-  const Free(this.assigned, {required this.wipeFirst});
+  const Free(this.assigned);
 
   final Assigned assigned;
-  final bool wipeFirst;
 }
 
 /// A pool has no user free; [why] says which.
