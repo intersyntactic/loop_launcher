@@ -6,5 +6,6 @@ library;
 
 export 'src/assigned.dart';
 export 'src/launcher.dart';
+export 'src/path_router.dart';
 export 'src/pools.dart';
 export 'src/run.dart';
