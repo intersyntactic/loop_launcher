@@ -1,5 +1,6 @@
-/// Running loop_launcher: subscribing to the record, and bringing up each
-/// journey path the docking station starts.
+/// Running loop_launcher: subscribing to the record, bringing up each
+/// journey path the docking station starts, and handing each path's loop
+/// its own entries.
 library;
 
 import 'dart:typed_data';
@@ -22,14 +23,16 @@ import 'package:is_shapes/is_shapes.dart' show JourneyId, JourneyPathId;
 
 import 'assigned.dart';
 import 'launcher.dart';
+import 'path_router.dart';
 import 'pools.dart';
 
 /// Runs loop_launcher until [subscribe]'s stream ends, which it never
 /// should: the caller treats a return as the record going away.
 ///
-/// It subscribes to the record from its start for the docking station's
-/// `admitted` and `ended` entries and its own `assigned` ones. Once
-/// [subscribe] has caught up, it brings up every live path, in the record's
+/// It subscribes to every entry in the record from its start: the docking
+/// station's `admitted` and `ended` entries, its own `assigned` ones, and
+/// every other entry, which [router] sorts by path. Once [subscribe] has
+/// caught up, it brings up every live path, in the record's
 /// order, and then each one as it starts. Bringing up a path, on this start
 /// or the next, is the same steps, each skipped when already done:
 ///
@@ -49,14 +52,20 @@ import 'pools.dart';
 /// doesn't start is said with [say] and left until the next start; a pool
 /// with no user free stops nothing else.
 ///
+/// Every entry on a live path's chain, or answering a proposal that is, is
+/// kept in [router]'s history for that path, and once caught up is also
+/// handed to [deliver]: a loop is handed its path's history when it
+/// connects, then each entry [deliver] is given for its path. Before
+/// caught up no loop is running, so the history is all there is.
+///
 /// A journey's `ended` stops its loops and closes its programs, once caught
-/// up, then frees its users and drops its paths, so no later start brings
-/// them up again. One ended before this start has nothing of its own
+/// up, then frees its users and drops its paths, from [pools] and [router],
+/// so no later start brings them up again. One ended before this start has nothing of its own
 /// running unless loop_launcher stopped between the two; a loop left so is
 /// stopped when its loop user is started for another path, and the journal
 /// refuses its writes meanwhile, its chain being closed.
 Future<void> runLoopLauncher({
-  required Stream<Subscribed> Function(Set<Kind> kinds) subscribe,
+  required Stream<Subscribed> Function() subscribe,
   required Future<EntryHash> Function(
     Kind kind,
     EntryHash? previous,
@@ -64,6 +73,8 @@ Future<void> runLoopLauncher({
   )
   send,
   required Pools pools,
+  required PathRouter router,
+  required void Function(JourneyPathId path, Entry entry) deliver,
   required SuitKind Function(JsonObject rules) suitKindOf,
   required Launcher launcher,
   required void Function(String line) say,
@@ -128,15 +139,15 @@ Future<void> runLoopLauncher({
         }
       }
     }
+    for (final assigned in paths) {
+      router.ended(assigned.journeyPath);
+    }
     pools.ended(journey);
     started.removeWhere((_, s) => s.$1 == journey);
   }
 
   var caughtUp = false;
-  await for (final item in subscribe({
-    ...DecisionEntryKind.all,
-    Assigned.kind,
-  })) {
+  await for (final item in subscribe()) {
     switch (item) {
       case Entry(:final kind, :final hash, :final body)
           when kind == Assigned.kind:
@@ -144,10 +155,15 @@ Future<void> runLoopLauncher({
             Assigned.decode(body) ??
             (throw StateError('cannot read the assigned ${hash.hex}'));
         pools.take(assigned, hash);
+        router.rooted(assigned.journeyPath, hash);
       // Only `get` returns an entry recorded without a header; one here
       // means the subscription is not what was asked for.
       case Entry(kind: null, :final hash):
         throw StateError('${hash.hex} has no kind');
+      case Entry(:final kind?) when !DecisionEntryKind.all.contains(kind):
+        if (router.route(item) case final path? when caughtUp) {
+          deliver(path, item);
+        }
       case Entry(
         kind: final kind?,
         :final hash,
