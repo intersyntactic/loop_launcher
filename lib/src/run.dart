@@ -11,9 +11,9 @@ import 'package:is_airlock_api/is_airlock_api.dart'
     show PathStarted, PathStartedAnswer, Ready, Rejected;
 import 'package:is_docking_station/is_docking_station.dart'
     show
-        Admitted,
-        DecisionKind,
-        Ended,
+        EventAdmitted,
+        DecisionEntryKind,
+        JourneyEnded,
         InJourney,
         StartsJourney,
         StartsJourneyPath,
@@ -144,7 +144,10 @@ Future<void> runLoopLauncher({
   }
 
   var caughtUp = false;
-  await for (final item in subscribe({...DecisionKind.all, Assigned.kind})) {
+  await for (final item in subscribe({
+    ...DecisionEntryKind.all,
+    Assigned.kind,
+  })) {
     switch (item) {
       case JournalEntryFrame(:final kind, :final hash, :final body)
           when kind == Assigned.kind:
@@ -159,7 +162,7 @@ Future<void> runLoopLauncher({
         :final body,
       ):
         switch (decodeDecision(kind, body)) {
-          case Admitted(
+          case EventAdmitted(
             placement: StartsJourneyPath(journey: final placement),
             :final rules,
           ):
@@ -173,7 +176,7 @@ Future<void> runLoopLauncher({
                 (throw StateError('${hash.hex} starts a path with no rules'));
             started[path] = (journey, pathRules);
             if (caughtUp) await bringUp(path, journey, pathRules);
-          case Ended(:final journey):
+          case JourneyEnded(:final journey):
             await end(journey, stop: caughtUp);
           case _:
             break;
