@@ -168,7 +168,11 @@ Future<void> runLoopLauncher({
         :final bytes,
         :final body,
       ):
-        switch (decodeDecision(kind, body)) {
+        // Our own wire, read strictly: an entry this pin of the docking
+        // station can't read means the two have drifted, and skipping it
+        // would leave its path never brought up, unsaid.
+        switch (decodeDecision(kind, body) ??
+            (throw StateError('cannot read the ${kind.name} ${hash.hex}'))) {
           case EventAdmitted(
             placement: StartsJourneyPath(journey: final placement),
             :final rules,
