@@ -38,7 +38,8 @@ import 'pools.dart';
 ///    entry, which roots the path's chain (Nick, 16 Nov: "amend"): the
 ///    journal takes the chain's entries only from the loop user it names,
 ///    and refuses a second one for the path;
-/// 2. open its suit's programs with [launcher];
+/// 2. open its suit's programs with [launcher], contained or open as
+///    [suitKindOf] reads from its rules;
 /// 3. start its loop with [launcher], under the rules the entry that started
 ///    it recorded, so a restart starts it under the same ones.
 ///
@@ -63,6 +64,7 @@ Future<void> runLoopLauncher({
   )
   send,
   required Pools pools,
+  required SuitKind Function(JsonObject rules) suitKindOf,
   required Launcher launcher,
   required void Function(String line) say,
 }) async {
@@ -95,7 +97,7 @@ Future<void> runLoopLauncher({
     }
     final Held(:assigned, :root) = held;
     try {
-      await launcher.openPrograms(assigned.suit);
+      await launcher.openPrograms(assigned.suit, suitKindOf(rules));
     } on LaunchFailed catch (e) {
       say('${path.hex}: its programs cannot run: ${e.why}');
       return;
