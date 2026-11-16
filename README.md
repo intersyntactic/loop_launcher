@@ -8,11 +8,10 @@ between the two.
 
 ## What it does
 
-It subscribes to the record from its start (every entry so far, then each
-new one as it is recorded) for the docking station's `admitted` entries
-that start a journey path and its `ended` entries, and its own `assigned`
-entries. For each path
-started, it:
+It subscribes to every entry in the record from its start (every entry so
+far, then each new one as it is recorded). It reads the docking station's
+`admitted` entries that start a journey path and its `ended` entries, and
+its own `assigned` entries. For each path started, it:
 
 1. hands the path two users from pools made ahead of time on the box (Nick,
    16 Nov): a **loop user** (`loop-<n>`), one per path, which runs the path's
@@ -31,6 +30,13 @@ using the airlock to record, it should just record itself"). The airlock
 reads each path's rules from `admitted` and its users from `assigned`, like
 every other service, and the journal's check on who writes a path's entries
 is the only check on who proposed, so no token is handed out.
+
+Every other entry goes to the path whose loop it is for, and to no other:
+an entry on the path's chain, which starts at its `assigned` entry and runs
+through each entry's `previous`, or an airlock outcome answering a proposal
+on that chain. A loop is handed its path's entries so far when it connects,
+then each new one. The journal can't tell which path an entry is about, so
+a loop never reads the record itself, and can't read another conversation.
 
 After a restart of loop_launcher, every live path goes through the same
 steps, skipping what's already done: a loop still running is left running.
