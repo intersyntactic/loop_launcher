@@ -4,9 +4,9 @@ library;
 
 import 'dart:typed_data';
 
-import 'package:agent_loop/agent_loop.dart' show JournalEntryFrame;
 import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_journal/service.dart' show Kind;
+import 'package:is_journal_client/is_journal_client.dart' show Entry;
 import 'package:is_shapes/is_shapes.dart' show JourneyPathId;
 
 /// Sorts the record's entries by journey path, so each path's loop is
@@ -33,7 +33,7 @@ final class PathRouter {
   final _pathOf = <EntryHash, JourneyPathId>{};
 
   /// Each live path's entries, after its root, in the record's order.
-  final _history = <JourneyPathId, List<JournalEntryFrame>>{};
+  final _history = <JourneyPathId, List<Entry>>{};
 
   /// [path]'s chain starts at [root], its `assigned` entry.
   void rooted(JourneyPathId path, EntryHash root) {
@@ -41,25 +41,28 @@ final class PathRouter {
     _history.putIfAbsent(path, () => []);
   }
 
-  /// The live path [frame] is for, kept in its history; null if it is on
+  /// The live path [entry] is for, kept in its history; null if it is on
   /// no live path's chain, nor answers a proposal that is.
-  JourneyPathId? route(JournalEntryFrame frame) {
-    final path = _outcomeKinds.contains(frame.kind)
-        ? _pathOf[_proposalOf(frame.kind, frame.body)]
-        // agent_loop's frame still calls an entry's `previous` `follows`.
-        : switch (frame.follows) {
+  JourneyPathId? route(Entry entry) {
+    final outcome = switch (entry.kind) {
+      final kind? when _outcomeKinds.contains(kind) => kind,
+      _ => null,
+    };
+    final path = outcome != null
+        ? _pathOf[_proposalOf(outcome, entry.body)]
+        : switch (entry.previous) {
             final previous? => _pathOf[previous],
             null => null,
           };
     if (path == null) return null;
-    if (!_outcomeKinds.contains(frame.kind)) _pathOf[frame.hash] = path;
-    _history[path]!.add(frame);
+    if (outcome == null) _pathOf[entry.hash] = path;
+    _history[path]!.add(entry);
     return path;
   }
 
   /// [path]'s entries so far, after its root, in the record's order: what
   /// its loop is handed when it starts, before the live ones.
-  List<JournalEntryFrame> history(JourneyPathId path) =>
+  List<Entry> history(JourneyPathId path) =>
       List.unmodifiable(_history[path] ?? const []);
 
   /// [path]'s journey has ended, and its chain is closed.

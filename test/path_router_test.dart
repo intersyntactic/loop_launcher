@@ -4,9 +4,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:agent_loop/agent_loop.dart' show JournalEntryFrame;
 import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_journal/service.dart' show Kind;
+import 'package:is_journal_client/is_journal_client.dart' show Entry;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 import 'package:is_shapes/is_shapes.dart' show JourneyPathId;
 import 'package:test/test.dart';
@@ -16,22 +16,23 @@ void main() {
   final returned = Kind.parse('returned')!;
   var next = 0;
 
-  JournalEntryFrame frame(Kind kind, EntryHash? previous, String body) {
+  Entry frame(Kind kind, EntryHash? previous, String body) {
     final bytes = Uint8List.fromList(
       utf8.encode('${kind.name}\n${previous?.hex ?? '-'}\n$body'),
     );
-    return JournalEntryFrame(
+    return Entry(
       hash: EntryHash.parse((++next).toRadixString(16).padLeft(64, '0'))!,
       kind: kind,
-      follows: previous,
-      bytes: bytes,
+      previous: previous,
+      recorded: bytes,
+      checked: false,
     );
   }
 
   late PathRouter router;
   final a = JourneyPathId.parse('a1' * 32)!;
   final b = JourneyPathId.parse('b2' * 32)!;
-  late JournalEntryFrame rootA, rootB;
+  late Entry rootA, rootB;
 
   setUp(() {
     router = PathRouter(

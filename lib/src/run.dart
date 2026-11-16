@@ -4,8 +4,6 @@ library;
 
 import 'dart:typed_data';
 
-import 'package:agent_loop/agent_loop.dart'
-    show CaughtUp, FollowItem, JournalEntryFrame;
 import 'package:checked_json/checked_json.dart' show JsonObject;
 import 'package:is_docking_station/is_docking_station.dart'
     show
@@ -18,6 +16,8 @@ import 'package:is_docking_station/is_docking_station.dart'
         decodeDecision;
 import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_journal/service.dart' show Kind;
+import 'package:is_journal_client/is_journal_client.dart'
+    show CaughtUp, Entry, Subscribed;
 import 'package:is_shapes/is_shapes.dart' show JourneyId, JourneyPathId;
 
 import 'assigned.dart';
@@ -56,7 +56,7 @@ import 'pools.dart';
 /// stopped when its loop user is started for another path, and the journal
 /// refuses its writes meanwhile, its chain being closed.
 Future<void> runLoopLauncher({
-  required Stream<FollowItem> Function(Set<Kind> kinds) subscribe,
+  required Stream<Subscribed> Function(Set<Kind> kinds) subscribe,
   required Future<EntryHash> Function(
     Kind kind,
     EntryHash? previous,
@@ -138,16 +138,20 @@ Future<void> runLoopLauncher({
     Assigned.kind,
   })) {
     switch (item) {
-      case JournalEntryFrame(:final kind, :final hash, :final body)
+      case Entry(:final kind, :final hash, :final body)
           when kind == Assigned.kind:
         final assigned =
             Assigned.decode(body) ??
             (throw StateError('cannot read the assigned ${hash.hex}'));
         pools.take(assigned, hash);
-      case JournalEntryFrame(
-        :final kind,
+      // Only `get` returns an entry recorded without a header; one here
+      // means the subscription is not what was asked for.
+      case Entry(kind: null, :final hash):
+        throw StateError('${hash.hex} has no kind');
+      case Entry(
+        kind: final kind?,
         :final hash,
-        :final bytes,
+        recorded: final bytes,
         :final body,
       ):
         // Our own wire, read strictly: an entry this pin of the docking
