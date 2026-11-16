@@ -8,7 +8,7 @@ import 'package:agent_loop/agent_loop.dart'
     show CaughtUp, FollowItem, JournalEntryFrame;
 import 'package:is_airlock_api/is_airlock_api.dart'
     show PathStarted, PathStartedAnswer, Ready, Rejected;
-import 'package:is_docking_port/is_docking_port.dart'
+import 'package:is_docking_station/is_docking_station.dart'
     show
         Admitted,
         DecisionKind,
