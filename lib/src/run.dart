@@ -7,8 +7,6 @@ import 'dart:typed_data';
 import 'package:agent_loop/agent_loop.dart'
     show CaughtUp, FollowItem, JournalEntryFrame;
 import 'package:checked_json/checked_json.dart' show JsonObject;
-import 'package:is_airlock_api/is_airlock_api.dart'
-    show PathStarted, PathStartedAnswer, Ready, Rejected;
 import 'package:is_docking_station/is_docking_station.dart'
     show
         EventAdmitted,
@@ -41,14 +39,14 @@ import 'pools.dart';
 ///    journal takes the chain's entries only from the loop user it names,
 ///    and refuses a second one for the path;
 /// 2. open its journey user's programs with [launcher];
-/// 3. tell the airlock it started, with [pathStarted], under the rules the
-///    entry that started it recorded, so a restart sends the same ones;
-/// 4. on [Ready], start its loop with [launcher], with the token.
+/// 3. start its loop with [launcher], under the rules the entry that started
+///    it recorded, so a restart starts it under the same ones.
 ///
-/// So after a restart, of loop_launcher or the airlock, each live path is
-/// told again and its loop started again with its new token. A path the
-/// airlock rejects, or whose loop doesn't start, is said with [say] and left
-/// until the next start; a pool with no user free stops nothing else.
+/// It tells the airlock nothing (Nick, 16 Nov: "loop_launcher shouldn't be
+/// using the airlock to record, it should just record itself"): the airlock
+/// reads each path's rules and users from the record. A path whose loop
+/// doesn't start is said with [say] and left until the next start; a pool
+/// with no user free stops nothing else.
 ///
 /// A journey's `ended` stops its loops and closes its programs, once caught
 /// up, then frees its users and drops its paths, so no later start brings
@@ -64,7 +62,6 @@ Future<void> runLoopLauncher({
     Uint8List body,
   )
   send,
-  required Future<PathStartedAnswer> Function(PathStarted message) pathStarted,
   required Pools pools,
   required Launcher launcher,
   required void Function(String line) say,
@@ -105,23 +102,10 @@ Future<void> runLoopLauncher({
       say('${path.hex}: its programs cannot run: ${e.why}');
       return;
     }
-    final answer = await pathStarted(
-      PathStarted(
-        path,
-        rules: rules,
-        loopUser: assigned.loopUser,
-        journeyUser: assigned.journeyUser,
-      ),
-    );
-    switch (answer) {
-      case Rejected(:final why):
-        say('${path.hex}: the airlock rejected it: $why');
-      case Ready(:final token):
-        try {
-          await launcher.start(assigned.loopUser, path, root, token);
-        } on LaunchFailed catch (e) {
-          say('${path.hex}: its loop did not start: ${e.why}');
-        }
+    try {
+      await launcher.start(assigned.loopUser, path, root, rules);
+    } on LaunchFailed catch (e) {
+      say('${path.hex}: its loop did not start: ${e.why}');
     }
   }
 

@@ -2,8 +2,8 @@
 /// starting a path's loop as its loop user.
 library;
 
-import 'package:is_airlock_api/is_airlock_api.dart'
-    show JourneyUser, LoopUser, PathToken;
+import 'package:checked_json/checked_json.dart' show JsonObject;
+import 'package:is_airlock_api/is_airlock_api.dart' show JourneyUser, LoopUser;
 import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_shapes/is_shapes.dart' show JourneyPathId;
 
@@ -15,8 +15,8 @@ import 'package:is_shapes/is_shapes.dart' show JourneyPathId;
 /// so only named template instances can be granted.
 abstract interface class Launcher {
   /// Stops [user]'s program socket and service, then empties its home and
-  /// ends every process running as it, in that order, so nothing the
-  /// airlock asks for can run while the home is emptied. Throws a
+  /// ends every process running as it, in that order, so no program the
+  /// airlock decides on can run while the home is emptied. Throws a
   /// [LaunchFailed] if it couldn't, and then [user] is not handed out.
   Future<void> wipe(JourneyUser user);
 
@@ -34,15 +34,14 @@ abstract interface class Launcher {
   /// nothing if none is. Throws a [LaunchFailed] if it did not stop.
   Future<void> stop(LoopUser user);
 
-  /// Starts [path]'s loop as [user], with [token] and [root], the
-  /// `assigned` entry its chain starts from, or starts it again if it is
-  /// running, so that a token and the loop holding it end together. Throws
-  /// a [LaunchFailed] if the loop did not start.
+  /// Starts [path]'s loop as [user], with [root], the `assigned` entry its
+  /// chain starts from, and the sign-ins [rules] allow; does nothing if it
+  /// is running. Throws a [LaunchFailed] if the loop did not start.
   Future<void> start(
     LoopUser user,
     JourneyPathId path,
     EntryHash root,
-    PathToken token,
+    JsonObject rules,
   );
 }
 
