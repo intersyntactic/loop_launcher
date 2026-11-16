@@ -38,10 +38,13 @@ says a journey is over (RULINGS).
     {"journeyPath": <hex>, "journey": <hex>, "loopUser": "loop-<n>",
      "journeyUser": "journey-<n>"}
 
-Kind `assigned`, sent only by `loop-launcher`, on a chain of its own: only a
-path's loop appends to a path's chain. With it, the owner of a file, read
-alongside the record, still says which journey wrote it after a pool user is
-handed out again.
+Kind `assigned`, sent only by `loop-launcher`. It roots the path's chain
+(Nick, 16 Nov: "amend"): the journal takes the chain's later entries only
+from the loop user it names, by the kernel's word on who is on the socket,
+until `ended`, and refuses a second `assigned` for the path. The loop is
+given its hash, and its first turn follows it. With it, the owner of a file,
+read alongside the record, still says which journey wrote it after a pool
+user is handed out again.
 
 ## Not here yet
 

@@ -3,6 +3,7 @@
 library;
 
 import 'package:is_airlock_api/is_airlock_api.dart' show PathToken;
+import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_shapes/is_shapes.dart' show JourneyPathId;
 
 import 'pool_user.dart';
@@ -25,10 +26,16 @@ abstract interface class Launcher {
   /// running. Throws a [LaunchFailed] if it did not start.
   Future<void> openPrograms(JourneyUser user);
 
-  /// Starts [path]'s loop as [user], with [token], or starts it again if it
-  /// is running, so that a token and the loop holding it end together.
-  /// Throws a [LaunchFailed] if the loop did not start.
-  Future<void> start(LoopUser user, JourneyPathId path, PathToken token);
+  /// Starts [path]'s loop as [user], with [token] and [root], the
+  /// `assigned` entry its chain starts from, or starts it again if it is
+  /// running, so that a token and the loop holding it end together. Throws
+  /// a [LaunchFailed] if the loop did not start.
+  Future<void> start(
+    LoopUser user,
+    JourneyPathId path,
+    EntryHash root,
+    PathToken token,
+  );
 }
 
 /// A [Launcher] call that did not do what it says; [why] says what

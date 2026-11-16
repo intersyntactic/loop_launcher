@@ -15,8 +15,10 @@ import 'pool_user.dart';
 /// [journeyUser] to own its journey's files. Both are held until the
 /// journey's `ended` entry: only `ended` says a journey is over (RULINGS).
 ///
-/// The entry, of kind `assigned`, sent only by loop_launcher's OS user, on a
-/// chain of loop_launcher's own (only a path's loop appends to its chain):
+/// The entry, of kind `assigned`, sent only by loop_launcher's OS user,
+/// roots the path's chain: the journal takes the chain's later entries only
+/// from [loopUser], until `ended`, and refuses a second `assigned` for the
+/// path (Nick, 16 Nov: "amend"):
 ///
 ///     {"journeyPath": <hex>, "journey": <hex>, "loopUser": "loop-<n>",
 ///      "journeyUser": "journey-<n>"}

@@ -3,6 +3,7 @@ library;
 
 import 'dart:collection';
 
+import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_shapes/is_shapes.dart' show JourneyId, JourneyPathId;
 
 import 'assigned.dart';
@@ -25,20 +26,20 @@ final class Pools {
   final SplayTreeSet<LoopUser> _freeLoops;
   final SplayTreeSet<JourneyUser> _freeJourneys;
   final _journeyUsers = <JourneyId, JourneyUser>{};
-  final _paths = <JourneyPathId, Assigned>{};
+  final _paths = <JourneyPathId, Held>{};
 
   /// What [path] was handed, if it has been.
-  Assigned? of(JourneyPathId path) => _paths[path];
+  Held? of(JourneyPathId path) => _paths[path];
 
   /// Every path handed users and not yet ended, in the order they were.
-  Iterable<Assigned> get live => _paths.values;
+  Iterable<Held> get live => _paths.values;
 
-  /// Takes [assigned], read from the record, as held.
-  void take(Assigned assigned) {
+  /// Takes [assigned], recorded at [root], as held.
+  void take(Assigned assigned, EntryHash root) {
     _freeLoops.remove(assigned.loopUser);
     _freeJourneys.remove(assigned.journeyUser);
     _journeyUsers[assigned.journey] = assigned.journeyUser;
-    _paths[assigned.journeyPath] = assigned;
+    _paths[assigned.journeyPath] = Held(assigned, root);
   }
 
   /// The users [path], in [journey], would be handed: the journey's own
@@ -77,12 +78,21 @@ final class Pools {
   /// free again.
   void ended(JourneyId journey) {
     if (_journeyUsers.remove(journey) case final user?) _freeJourneys.add(user);
-    _paths.removeWhere((_, a) {
-      if (a.journey != journey) return false;
-      _freeLoops.add(a.loopUser);
+    _paths.removeWhere((_, held) {
+      if (held.assigned.journey != journey) return false;
+      _freeLoops.add(held.assigned.loopUser);
       return true;
     });
   }
+}
+
+/// A path's [assigned] users, recorded at [root]: the `assigned` entry that
+/// roots the path's chain, which its loop's first turn follows.
+final class Held {
+  const Held(this.assigned, this.root);
+
+  final Assigned assigned;
+  final EntryHash root;
 }
 
 /// What [Pools.handout] gives: [Free] users, or [Exhausted].

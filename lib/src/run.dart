@@ -35,7 +35,9 @@ import 'pools.dart';
 ///
 /// 1. hand it users from [pools], wiping a journey user new to its journey
 ///    with [launcher] first, and record that with [send] as an `assigned`
-///    entry, following the one before it;
+///    entry, which roots the path's chain (Nick, 16 Nov: "amend"): the
+///    journal takes the chain's entries only from the loop user it names,
+///    and refuses a second one for the path;
 /// 2. open its journey user's programs with [launcher];
 /// 3. tell the airlock it started, with [pathStarted], under [rulesOf] it;
 /// 4. on [Ready], start its loop with [launcher], with the token.
@@ -64,11 +66,10 @@ Future<void> runLoopLauncher({
 }) async {
   // Every path started, with its journey, in the record's order.
   final started = <JourneyPathId, JourneyId>{};
-  EntryHash? tip;
 
   Future<void> bringUp(JourneyPathId path, JourneyId journey) async {
-    var assigned = pools.of(path);
-    if (assigned == null) {
+    var held = pools.of(path);
+    if (held == null) {
       switch (pools.handout(path, journey)) {
         case Exhausted(:final why):
           say('${path.hex}: not brought up: $why');
@@ -82,11 +83,12 @@ Future<void> runLoopLauncher({
               return;
             }
           }
-          tip = await send(Assigned.kind, tip, free.encode());
-          pools.take(free);
-          assigned = free;
+          final root = await send(Assigned.kind, null, free.encode());
+          pools.take(free, root);
+          held = Held(free, root);
       }
     }
+    final Held(:assigned, :root) = held;
     try {
       await launcher.openPrograms(assigned.journeyUser);
     } on LaunchFailed catch (e) {
@@ -99,7 +101,7 @@ Future<void> runLoopLauncher({
         say('${path.hex}: the airlock rejected it: $why');
       case Ready(:final token):
         try {
-          await launcher.start(assigned.loopUser, path, token);
+          await launcher.start(assigned.loopUser, path, root, token);
         } on LaunchFailed catch (e) {
           say('${path.hex}: its loop did not start: ${e.why}');
         }
@@ -114,8 +116,7 @@ Future<void> runLoopLauncher({
         final assigned =
             Assigned.decode(body) ??
             (throw StateError('cannot read the assigned ${hash.hex}'));
-        pools.take(assigned);
-        tip = hash;
+        pools.take(assigned, hash);
       case JournalEntryFrame(:final kind, :final bytes, :final body):
         final decision = decodeDecision(kind, body);
         if (decision case Admitted(
