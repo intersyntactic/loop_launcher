@@ -17,7 +17,7 @@ dependencies:
   is_docking_station:
     git:
       url: https://github.com/intersyntactic/docking_station.git
-      ref: c4d6c39cd812ec60982215739aacf343498ccbe7
+      ref: 0c8d4d578ad991d528830334deeeb8e9a61a921a
   is_journal: ^0.7.0
   is_journal_client: ^0.1.0
   is_shapes: ^0.4.4
