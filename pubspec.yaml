@@ -12,20 +12,14 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  agent_loop:
-    git:
-      url: https://github.com/intersyntactic/agent_loop.git
-      ref: 207690a
   checked_json: ^0.2.1
-  is_airlock_api:
-    git:
-      url: https://github.com/intersyntactic/airlock_api.git
-      ref: 3c07335168e0ef4468ab602403f2d99a73fa51e2
+  is_airlock_api: ^0.5.0
   is_docking_station:
     git:
       url: https://github.com/intersyntactic/docking_station.git
-      ref: d660d34f37a3902c5b96d5fcd22f29ea3040f665
-  is_journal: ^0.5.0
+      ref: c4d6c39cd812ec60982215739aacf343498ccbe7
+  is_journal: ^0.7.0
+  is_journal_client: ^0.1.0
   is_shapes: ^0.4.4
 
 dev_dependencies:
