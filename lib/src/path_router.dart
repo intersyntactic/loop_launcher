@@ -15,8 +15,8 @@ import 'package:is_shapes/is_shapes.dart' show JourneyPathId;
 /// another conversation.
 ///
 /// An entry is a path's when it is on the path's chain, which starts at its
-/// `assigned` entry and runs through each entry's `follows`; the journal
-/// refuses one whose `follows` is not its chain's tip, so the chain is one
+/// `assigned` entry and runs through each entry's `previous`; the journal
+/// refuses one whose `previous` is not its chain's tip, so the chain is one
 /// line. The airlock's outcomes are on chains of their own, so one is a
 /// path's when the proposal it names is on the path's chain.
 final class PathRouter {
@@ -46,8 +46,9 @@ final class PathRouter {
   JourneyPathId? route(JournalEntryFrame frame) {
     final path = _outcomeKinds.contains(frame.kind)
         ? _pathOf[_proposalOf(frame.kind, frame.body)]
+        // agent_loop's frame still calls an entry's `previous` `follows`.
         : switch (frame.follows) {
-            final follows? => _pathOf[follows],
+            final previous? => _pathOf[previous],
             null => null,
           };
     if (path == null) return null;

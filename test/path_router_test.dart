@@ -1,5 +1,5 @@
 // Each loop is handed its own path's entries and no other's: the chain
-// through `follows` from its root, and the airlock's outcomes for its
+// through each entry's `previous` from its root, and the airlock's outcomes for its
 // proposals.
 import 'dart:convert';
 import 'dart:typed_data';
@@ -16,14 +16,14 @@ void main() {
   final returned = Kind.parse('returned')!;
   var next = 0;
 
-  JournalEntryFrame frame(Kind kind, EntryHash? follows, String body) {
+  JournalEntryFrame frame(Kind kind, EntryHash? previous, String body) {
     final bytes = Uint8List.fromList(
-      utf8.encode('${kind.name}\n${follows?.hex ?? '-'}\n$body'),
+      utf8.encode('${kind.name}\n${previous?.hex ?? '-'}\n$body'),
     );
     return JournalEntryFrame(
       hash: EntryHash.parse((++next).toRadixString(16).padLeft(64, '0'))!,
       kind: kind,
-      follows: follows,
+      follows: previous,
       bytes: bytes,
     );
   }
@@ -63,7 +63,7 @@ void main() {
     final outcome = frame(returned, decided.hash, proposal.hash.hex);
     expect(router.route(decided), isNull);
     expect(router.route(outcome), a);
-    // The outcome is not on A's chain: what follows it is not A's.
+    // The outcome is not on A's chain: an entry after it is not A's.
     expect(router.route(frame(turn, outcome.hash, 'airlock next')), isNull);
   });
 
