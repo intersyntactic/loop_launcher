@@ -2,8 +2,8 @@ name: is_loop_launcher
 description: >-
   Launches each journey path's agent loop: it subscribes to the record for
   the docking station's admissions that start a journey path, hands the path a loop
-  user and a journey user from their pools, tells the airlock the path
-  started, and starts the path's loop with the token it is given back.
+  user and a journey user from their pools, records that handout, and
+  starts the path's loop with the sign-ins its rules allow.
 version: 0.1.0-dev
 repository: https://github.com/intersyntactic/loop_launcher
 publish_to: none
