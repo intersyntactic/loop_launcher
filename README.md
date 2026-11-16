@@ -16,13 +16,13 @@ started, it:
 
 1. hands the path two users from pools made ahead of time on the box (Nick,
    16 Nov): a **loop user** (`loop-<n>`), one per path, which runs the path's
-   loop and holds its sign-ins, and owns no files; and its
-   journey's **journey user** (`journey-<n>`), shared by the journey's paths,
-   which owns the journey's working tree and runs its programs. A journey
-   user new to its journey is wiped first. The handout is recorded as an
-   `assigned` entry;
-2. opens the journey user's programs (`program@journey-<n>`), which the
-   airlock's program driver connects to;
+   loop and holds its sign-ins, and owns no files; and a **suit**
+   (`suit-<n>`), one per path, contained or open alike, which owns the
+   path's working tree and runs its programs (Nick, 16 Nov: every path wears
+   a suit of its own). No two paths share either. The suit is wiped first.
+   The handout is recorded as an `assigned` entry;
+2. opens the suit's programs, which the airlock's program driver connects
+   to;
 3. starts the path's loop (`agent-loop@loop-<n>`) with the sign-ins the
    rules allow, the rules being those the entry that started it recorded.
 
@@ -38,21 +38,21 @@ steps, skipping what's already done: a loop still running is left running.
 Both users are held until the journey's `ended` entry, which the docking
 station writes, since only `ended` says a journey is over (RULINGS). Then
 the journey's loops are stopped, its programs closed, its users freed, and
-its paths dropped, so no later start brings them up again. A freed journey
-user is wiped before it is handed out again.
+its paths dropped, so no later start brings them up again. A freed suit is
+wiped before it is handed out again.
 
 ## The `assigned` entry
 
     {"journeyPath": <hex>, "journey": <hex>, "loopUser": "loop-<n>",
-     "journeyUser": "journey-<n>"}
+     "suit": "suit-<n>"}
 
 Kind `assigned`, sent only by `loop-launcher`. It roots the path's chain
 (Nick, 16 Nov: "amend"): the journal takes the chain's later entries only
 from the loop user it names, by the kernel's word on who is on the socket,
 until `ended`, and refuses a second `assigned` for the path. The loop is
-given its hash, and its first turn follows it. With it, the owner of a file,
-read alongside the record, still says which journey wrote it after a pool
-user is handed out again.
+given its hash, and its first turn names it as its previous. With it, the
+owner of a file, read alongside the record, still says which journey path
+wrote it after a pool user is handed out again.
 
 ## Not here yet
 

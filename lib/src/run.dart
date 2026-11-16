@@ -33,12 +33,12 @@ import 'pools.dart';
 /// order, and then each one as it starts. Bringing up a path, on this start
 /// or the next, is the same steps, each skipped when already done:
 ///
-/// 1. hand it users from [pools], wiping a journey user new to its journey
-///    with [launcher] first, and record that with [send] as an `assigned`
+/// 1. hand it a loop user and a suit from [pools], wiping the suit with
+///    [launcher] first, and record that with [send] as an `assigned`
 ///    entry, which roots the path's chain (Nick, 16 Nov: "amend"): the
 ///    journal takes the chain's entries only from the loop user it names,
 ///    and refuses a second one for the path;
-/// 2. open its journey user's programs with [launcher];
+/// 2. open its suit's programs with [launcher];
 /// 3. start its loop with [launcher], under the rules the entry that started
 ///    it recorded, so a restart starts it under the same ones.
 ///
@@ -58,7 +58,7 @@ Future<void> runLoopLauncher({
   required Stream<FollowItem> Function(Set<Kind> kinds) subscribe,
   required Future<EntryHash> Function(
     Kind kind,
-    EntryHash? follows,
+    EntryHash? previous,
     Uint8List body,
   )
   send,
@@ -81,14 +81,12 @@ Future<void> runLoopLauncher({
         case Exhausted(:final why):
           say('${path.hex}: not brought up: $why');
           return;
-        case Free(assigned: final free, :final wipeFirst):
-          if (wipeFirst) {
-            try {
-              await launcher.wipe(free.journeyUser);
-            } on LaunchFailed catch (e) {
-              say('${free.journeyUser}: not handed out: ${e.why}');
-              return;
-            }
+        case Free(assigned: final free):
+          try {
+            await launcher.wipe(free.suit);
+          } on LaunchFailed catch (e) {
+            say('${free.suit}: not handed out: ${e.why}');
+            return;
           }
           final root = await send(Assigned.kind, null, free.encode());
           pools.take(free, root);
@@ -97,7 +95,7 @@ Future<void> runLoopLauncher({
     }
     final Held(:assigned, :root) = held;
     try {
-      await launcher.openPrograms(assigned.journeyUser);
+      await launcher.openPrograms(assigned.suit);
     } on LaunchFailed catch (e) {
       say('${path.hex}: its programs cannot run: ${e.why}');
       return;
@@ -121,12 +119,10 @@ Future<void> runLoopLauncher({
         } on LaunchFailed catch (e) {
           say('${assigned.loopUser}: did not stop: ${e.why}');
         }
-      }
-      if (paths.firstOrNull case final first?) {
         try {
-          await launcher.closePrograms(first.journeyUser);
+          await launcher.closePrograms(assigned.suit);
         } on LaunchFailed catch (e) {
-          say('${first.journeyUser}: programs did not close: ${e.why}');
+          say('${assigned.suit}: programs did not close: ${e.why}');
         }
       }
     }
