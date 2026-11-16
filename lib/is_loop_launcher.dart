@@ -6,6 +6,5 @@ library;
 
 export 'src/assigned.dart';
 export 'src/launcher.dart';
-export 'src/pool_user.dart';
 export 'src/pools.dart';
 export 'src/run.dart';

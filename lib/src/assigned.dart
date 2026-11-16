@@ -9,7 +9,7 @@ import 'dart:typed_data';
 import 'package:is_journal/service.dart' show Kind;
 import 'package:is_shapes/is_shapes.dart' show JourneyId, JourneyPathId;
 
-import 'pool_user.dart';
+import 'package:is_airlock_api/is_airlock_api.dart' show JourneyUser, LoopUser;
 
 /// [journeyPath], in [journey], was handed [loopUser] to run its loop and
 /// [journeyUser] to own its journey's files. Both are held until the
