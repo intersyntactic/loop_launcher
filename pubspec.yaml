@@ -1,0 +1,32 @@
+name: is_loop_launcher
+description: >-
+  Launches each journey path's agent loop: it follows the record for the
+  docking port's admissions that start a journey path, hands the path a loop
+  user and a journey user from their pools, tells the airlock the path
+  started, and starts the path's loop with the token it is given back.
+version: 0.1.0-dev
+repository: https://github.com/intersyntactic/loop_launcher
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  agent_loop:
+    git:
+      url: https://github.com/intersyntactic/agent_loop.git
+      ref: 207690a
+  is_airlock_api:
+    git:
+      url: https://github.com/intersyntactic/airlock_api.git
+      ref: 10559185d4d8c13780a7a4c07d1a47ab9459c99f
+  is_docking_port:
+    git:
+      url: https://github.com/intersyntactic/docking_port.git
+      ref: 591f2e8
+  is_journal: ^0.5.0
+  is_shapes: ^0.4.4
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.33.0
