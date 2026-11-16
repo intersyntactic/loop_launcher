@@ -16,6 +16,7 @@ dependencies:
     git:
       url: https://github.com/intersyntactic/agent_loop.git
       ref: 207690a
+  checked_json: ^0.2.1
   is_airlock_api:
     git:
       url: https://github.com/intersyntactic/airlock_api.git
@@ -23,7 +24,7 @@ dependencies:
   is_docking_station:
     git:
       url: https://github.com/intersyntactic/docking_station.git
-      ref: 38bc744
+      ref: bfc5d23
   is_journal: ^0.5.0
   is_shapes: ^0.4.4
 

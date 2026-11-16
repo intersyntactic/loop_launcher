@@ -26,6 +26,15 @@ abstract interface class Launcher {
   /// running. Throws a [LaunchFailed] if it did not start.
   Future<void> openPrograms(JourneyUser user);
 
+  /// Stops [user]'s program socket and service, when its journey has ended;
+  /// does nothing if they are not running. Throws a [LaunchFailed] if they
+  /// did not stop.
+  Future<void> closePrograms(JourneyUser user);
+
+  /// Stops the loop running as [user], when its journey has ended; does
+  /// nothing if none is. Throws a [LaunchFailed] if it did not stop.
+  Future<void> stop(LoopUser user);
+
   /// Starts [path]'s loop as [user], with [token] and [root], the
   /// `assigned` entry its chain starts from, or starts it again if it is
   /// running, so that a token and the loop holding it end together. Throws
