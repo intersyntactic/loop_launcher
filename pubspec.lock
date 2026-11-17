@@ -157,18 +157,18 @@ packages:
     dependency: "direct main"
     description:
       name: is_airlock_api
-      sha256: b90e60aa24e5192d86e935524a3986736aa86d3fcc36875d8d56ba50a6406a37
+      sha256: "0c100ee3913de48cbe259076440e4bda89c14668e7e37b7883d68af8a8231a60"
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.0"
+    version: "0.10.1"
   is_annotation_shapes:
     dependency: transitive
     description:
       name: is_annotation_shapes
-      sha256: aa610033aed86a67ae83ed5218b11e847ecae97dd824ca80507a49eccd366a57
+      sha256: eaba8ab69040d0612d12bbec7315b567015d4369dd19c91c2b4dd14223c7a2f5
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1"
+    version: "0.3.2"
   is_content_id:
     dependency: transitive
     description:
@@ -181,16 +181,16 @@ packages:
     dependency: transitive
     description:
       name: is_conversation_shapes
-      sha256: e499a20db9aa552014db3dbb909f8cf6176cafdff27fc00695b062ad347128f9
+      sha256: "9cc49a7f1bf6ddb077a86516533b706b6c2ac08856b036a7cfcec67286ba09c1"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.2"
+    version: "0.8.3"
   is_docking_station:
     dependency: "direct main"
     description:
       path: "."
-      ref: "8b7a886582b0149d4cf79b1c5d782a0fb8a6a685"
-      resolved-ref: "8b7a886582b0149d4cf79b1c5d782a0fb8a6a685"
+      ref: db91a4a09330eb1266939d36ed502b400a269f89
+      resolved-ref: db91a4a09330eb1266939d36ed502b400a269f89
       url: "https://github.com/intersyntactic/docking_station.git"
     source: git
     version: "0.0.1"
@@ -198,26 +198,26 @@ packages:
     dependency: "direct main"
     description:
       name: is_effects
-      sha256: f0aa06542e242e3ae0888710a878ad5123aaf78672309a551026a3e366f1c674
+      sha256: "3ab745e8d01af33d9db6934d39d9ed6d69c1da089ed5d6c465e938a26e63234d"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.0"
+    version: "0.8.0"
   is_flight_rules:
     dependency: "direct main"
     description:
       name: is_flight_rules
-      sha256: "1795153d5ac90debc1c99466b5b6ac2e1894abe9005cdeb0cf6a62a5db7ac438"
+      sha256: "2ef0e91cd63c4b339674c5c09af6f7b6e883926c9bf9a7a1b43d68531236c513"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.1.1"
   is_logbook:
     dependency: "direct main"
     description:
       name: is_logbook
-      sha256: "72f997c9ea6368e30a8350b244551110469f2a6d88a313f283401f2a90028056"
+      sha256: b1b848bb127e2453508dced234c298a95013a3fee56911cb98ddd750715b9e31
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0"
+    version: "0.2.1"
   is_logbook_client:
     dependency: "direct main"
     description:
@@ -238,10 +238,10 @@ packages:
     dependency: "direct main"
     description:
       name: is_shapes
-      sha256: "0c589d832c1386014c076452d6a3ff91799cb5cf322474ce4c65d4a552183e51"
+      sha256: aa5d5f37840ab8a09517bcf7313418bdb6ffab2dea29b3ac06d2e95875f8c2e8
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.6.0"
   lints:
     dependency: "direct dev"
     description:
