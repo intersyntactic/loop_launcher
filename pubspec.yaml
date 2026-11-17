@@ -12,24 +12,16 @@ environment:
 
 dependencies:
   checked_json: ^0.2.1
-  # Swap for `^0.9.0` once pub.dev's listing shows it.
-  is_airlock_api:
-    git:
-      url: https://github.com/intersyntactic/airlock_api.git
-      ref: v0.9.0
+  is_airlock_api: ^0.9.0
   is_docking_station:
     git:
       url: https://github.com/intersyntactic/docking_station.git
-      ref: d8f1cf4f1e926f5b1b5d4b3af83231b102373455
+      ref: 8b7a886582b0149d4cf79b1c5d782a0fb8a6a685
   is_effects: ^0.7.0
   is_flight_rules: 0.1.0
   is_logbook: ^0.2.0
-  # Swap for `^0.2.0` once is_logbook_client 0.2.0 is on pub.dev.
-  is_logbook_client:
-    git:
-      url: https://github.com/intersyntactic/logbook_client.git
-      ref: fcb4c498f8213d49b500d61a14925e8eb46dc624
-  is_shapes: ^0.5.0
+  is_logbook_client: ^0.2.0
+  is_shapes: '>=0.5.0 <0.7.0'
 
 dev_dependencies:
   lints: ^6.1.0
