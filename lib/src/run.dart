@@ -17,7 +17,7 @@ import 'package:is_docking_station/is_docking_station.dart'
 import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_flight_rules/is_flight_rules.dart'
     show WhatMayLeaveThisMachine;
-import 'package:is_logbook/is_logbook.dart' show EntryHash;
+import 'package:is_logbook/is_logbook.dart' show ObjectId;
 import 'package:is_logbook/service.dart' show Kind;
 import 'package:is_logbook_client/is_logbook_client.dart'
     show CaughtUp, Entry, Subscribed;
@@ -45,9 +45,9 @@ final waitingToStartKind = Kind.parse(WaitingToStart.kind)!;
 /// up, each is also handed to [deliver].
 Future<void> runLoopLauncher({
   required Stream<Subscribed> Function() subscribe,
-  required Future<EntryHash> Function(
+  required Future<ObjectId> Function(
     Kind kind,
-    EntryHash? previous,
+    ObjectId? previous,
     Uint8List body,
   )
   send,
@@ -157,43 +157,34 @@ Future<void> runLoopLauncher({
   var caughtUp = false;
   await for (final item in subscribe()) {
     switch (item) {
-      case Entry(:final kind, :final hash, :final body)
+      case Entry(:final kind, :final id, :final body)
           when kind == UsersAssignedToTrajectory.kind:
         final users =
             UsersAssignedToTrajectory.decode(body) ??
-            (throw StateError('cannot read ${hash.hex}'));
-        pools.take(users, hash);
+            (throw StateError('cannot read ${id.hex}'));
+        pools.take(users, id);
         router.rooted(users.trajectory, item);
         if (caughtUp) deliver(users.trajectory, item);
-      case Entry(:final kind, :final hash, :final body)
+      case Entry(:final kind, :final id, :final body)
           when kind == waitingToStartKind:
         try {
           waiting.add(
             WaitingToStart.fromJson(jsonDecode(utf8.decode(body))).trajectory,
           );
         } on FormatException catch (e) {
-          throw StateError('cannot read ${hash.hex}: $e');
+          throw StateError('cannot read ${id.hex}: $e');
         }
-      // Only `get` returns an entry with no kind.
-      case Entry(kind: null, :final hash):
-        throw StateError('${hash.hex} has no kind');
-      case Entry(:final kind?) when !DecisionEntryKind.all.contains(kind):
+      case Entry(:final kind) when !DecisionEntryKind.all.contains(kind):
         if (router.route(item) case final trajectory? when caughtUp) {
           deliver(trajectory, item);
         }
-      case Entry(
-        kind: final kind?,
-        :final hash,
-        recorded: final bytes,
-        :final body,
-      ):
+      case Entry(:final kind, :final id, recorded: final bytes, :final body):
         switch (decodeDecision(kind, body) ??
-            (throw StateError('cannot read the ${kind.name} ${hash.hex}'))) {
+            (throw StateError('cannot read the ${kind.name} ${id.hex}'))) {
           case EventAdmittedToMission(
             placement: StartsTrajectory(mission: final placement),
             :final rules,
           ):
-            // The ids hash the admitted entry's own bytes, never its [hash].
             final trajectory = TrajectoryId.of(bytes);
             final mission = switch (placement) {
               InMission(:final mission) => mission,
@@ -202,7 +193,7 @@ Future<void> runLoopLauncher({
             final typed = WhatMayLeaveThisMachine.fromJson(
               rules ??
                   (throw StateError(
-                    '${hash.hex} starts a trajectory with '
+                    '${id.hex} starts a trajectory with '
                     'no rules',
                   )),
             );

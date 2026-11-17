@@ -97,7 +97,7 @@ final class LoopFeeds {
       if (kinds == null || kinds.contains(entry.kind)) _send(socket, entry);
     }
     socket.add(
-      ascii.encode('caught-up ${history.lastOrNull?.hash.hex ?? 'start'}\n'),
+      ascii.encode('caught-up ${history.lastOrNull?.id.hex ?? 'start'}\n'),
     );
     _listening.putIfAbsent(trajectory, () => []).add((kinds, socket));
   }
@@ -111,7 +111,7 @@ final class LoopFeeds {
     socket
       ..add(
         ascii.encode(
-          'entry ${entry.hash.hex} ${entry.kind?.name ?? '-'} '
+          'entry ${entry.id.hex} ${entry.kind.name} '
           '${entry.previous?.hex ?? '-'} ${entry.recorded.length}\n',
         ),
       )
