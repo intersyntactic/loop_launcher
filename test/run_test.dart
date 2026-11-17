@@ -105,6 +105,7 @@ void main() {
     final machine = _Machine();
     final delivered = <(TrajectoryId, Entry)>[];
     final router = TrajectoryRouter(
+      eventKinds: {Kind.parse('event')!},
       outcomeKinds: {returned},
       proposalOf: (_, body) => ObjectId.parse(utf8.decode(body)),
     );

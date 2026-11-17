@@ -32,6 +32,7 @@ void main() {
 
   setUp(() {
     router = TrajectoryRouter(
+      eventKinds: {Kind.parse('event')!},
       outcomeKinds: {returned},
       proposalOf: (_, body) => ObjectId.parse(utf8.decode(body)),
     );
@@ -78,6 +79,31 @@ void main() {
     final elsewhere = frame(turn, null, 'x');
     expect(router.route(frame(returned, null, elsewhere.id.hex)), isNull);
     expect(router.route(frame(returned, null, 'a plain line')), isNull);
+  });
+
+  test('the raw event an admission names comes just before it, to that '
+      'trajectory only', () {
+    final c = TrajectoryId.parse('c3' * 32)!;
+    final raw = frame(Kind.parse('event')!, null, 'teams message');
+    final admission = frame(turn, null, 'admitted');
+    expect(router.route(raw), isNull);
+    router.started(c, admission, raw.id);
+    expect(router.history(c), [raw, admission]);
+
+    final rawB = frame(Kind.parse('event')!, null, 'second message');
+    final placedB = frame(turn, null, 'placed on b');
+    router.route(rawB);
+    expect(router.placed(b, placedB, rawB.id), [rawB, placedB]);
+    expect(router.history(b), [rootB, rawB, placedB]);
+    expect(router.history(a), [rootA]);
+  });
+
+  test('an event decided elsewhere is not handed to a later admission', () {
+    final raw = frame(Kind.parse('event')!, null, 'not admitted');
+    router
+      ..route(raw)
+      ..decided(raw.id);
+    expect(router.placed(a, frame(turn, null, 'x'), raw.id), hasLength(1));
   });
 
   test('an ended trajectory is handed nothing more', () {
