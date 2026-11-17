@@ -22,24 +22,24 @@ final class Pools {
 
   final SplayTreeSet<LoopUser> _freeLoops;
   final SplayTreeSet<Suit> _freeSuits;
-  final _paths = <JourneyPathId, Held>{};
+  final _paths = <JourneyPathId, Handed>{};
 
   /// What [path] was handed, if it has been.
-  Held? of(JourneyPathId path) => _paths[path];
+  Handed? of(JourneyPathId path) => _paths[path];
 
   /// Every path handed users and not yet ended, in the order they were.
-  Iterable<Held> get live => _paths.values;
+  Iterable<Handed> get live => _paths.values;
 
-  /// Takes [assigned], recorded at [root], as held.
+  /// Takes [assigned], recorded at [root], as handed out.
   void take(Assigned assigned, EntryHash root) {
     _freeLoops.remove(assigned.loopUser);
     _freeSuits.remove(assigned.suit);
-    _paths[assigned.journeyPath] = Held(assigned, root);
+    _paths[assigned.journeyPath] = Handed(assigned, root);
   }
 
   /// The users [path], in [journey], would be handed: a free loop user and
   /// a free suit, which has to be wiped before it is handed out. Takes
-  /// nothing: the handout is held once its `assigned` entry is recorded and
+  /// nothing: the handout is taken once its `assigned` entry is recorded and
   /// [take]n.
   Handout handout(JourneyPathId path, JourneyId journey) => switch ((
     _freeLoops.firstOrNull,
@@ -54,10 +54,10 @@ final class Pools {
 
   /// [journey] has ended: its paths' loop users and suits are free again.
   void ended(JourneyId journey) {
-    _paths.removeWhere((_, held) {
-      if (held.assigned.journey != journey) return false;
-      _freeLoops.add(held.assigned.loopUser);
-      _freeSuits.add(held.assigned.suit);
+    _paths.removeWhere((_, handed) {
+      if (handed.assigned.journey != journey) return false;
+      _freeLoops.add(handed.assigned.loopUser);
+      _freeSuits.add(handed.assigned.suit);
       return true;
     });
   }
@@ -65,8 +65,8 @@ final class Pools {
 
 /// A path's [assigned] users, recorded at [root]: the `assigned` entry that
 /// roots the path's chain, which its loop's first turn follows.
-final class Held {
-  const Held(this.assigned, this.root);
+final class Handed {
+  const Handed(this.assigned, this.root);
 
   final Assigned assigned;
   final EntryHash root;
