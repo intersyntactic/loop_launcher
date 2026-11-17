@@ -5,8 +5,8 @@ import 'package:is_airlock_api/is_airlock_api.dart'
     show
         LoopUser,
         Suit,
-        readResultOfActionOrWhyRefused,
-        resultOfActionOrWhyRefusedKind;
+        outcomeOfProposedActionKind,
+        readOutcomeOfProposedAction;
 import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_logbook_client/is_logbook_client.dart';
 import 'package:is_loop_launcher/is_loop_launcher.dart';
@@ -58,7 +58,7 @@ Future<void> main() async {
     suits: [for (var n = 1; n <= poolSize; n++) Suit.parse('suit-$n')!],
   );
   final router = TrajectoryRouter(
-    outcomeKinds: {Kind.parse(resultOfActionOrWhyRefusedKind)!},
+    outcomeKinds: {Kind.parse(outcomeOfProposedActionKind)!},
     // An action with no proposal is recorded under the same kind as a plain
     // line; it answers no loop. The proposal's EntryId and the logbook's id
     // are both the sha256 of its text.
@@ -69,7 +69,7 @@ Future<void> main() async {
       } on FormatException {
         return null;
       }
-      return switch (readResultOfActionOrWhyRefused(json)) {
+      return switch (readOutcomeOfProposedAction(json)) {
         (:final proposed, result: _) => ObjectId.parse(proposed.hex),
         null => null,
       };
