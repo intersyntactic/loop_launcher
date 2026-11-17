@@ -1,14 +1,13 @@
-// Each loop is handed its own path's entries and no other's: the chain
-// through each entry's `previous` from its root, and the airlock's outcomes for its
-// proposals.
+// Each loop is handed its own trajectory's entries and no other's: the chain
+// from its root, and the airlock's outcomes for its proposals.
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:is_journal/is_journal.dart' show EntryHash;
-import 'package:is_journal/service.dart' show Kind;
-import 'package:is_journal_client/is_journal_client.dart' show Entry;
+import 'package:is_logbook/is_logbook.dart' show EntryHash;
+import 'package:is_logbook/service.dart' show Kind;
+import 'package:is_logbook_client/is_logbook_client.dart' show Entry;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
-import 'package:is_shapes/is_shapes.dart' show JourneyPathId;
+import 'package:is_shapes/is_shapes.dart' show TrajectoryId;
 import 'package:test/test.dart';
 
 void main() {
@@ -29,20 +28,20 @@ void main() {
     );
   }
 
-  late PathRouter router;
-  final a = JourneyPathId.parse('a1' * 32)!;
-  final b = JourneyPathId.parse('b2' * 32)!;
+  late TrajectoryRouter router;
+  final a = TrajectoryId.parse('a1' * 32)!;
+  final b = TrajectoryId.parse('b2' * 32)!;
   late Entry rootA, rootB;
 
   setUp(() {
-    router = PathRouter(
+    router = TrajectoryRouter(
       outcomeKinds: {returned},
       proposalOf: (_, body) =>
           EntryHash.parse(utf8.decode(body)) ??
           (throw const FormatException('not a proposal hash')),
     );
-    rootA = frame(Assigned.kind, null, '');
-    rootB = frame(Assigned.kind, null, '');
+    rootA = frame(UsersAssignedToTrajectory.kind, null, '');
+    rootB = frame(UsersAssignedToTrajectory.kind, null, '');
     router.rooted(a, rootA.hash);
     router.rooted(b, rootB.hash);
   });
