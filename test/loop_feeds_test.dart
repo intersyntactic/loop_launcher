@@ -6,6 +6,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser;
+import 'package:is_docking_station/is_docking_station.dart'
+    show DecisionEntryKind;
 import 'package:is_logbook_client/is_logbook_client.dart';
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 import 'package:is_shapes/is_shapes.dart' show TrajectoryId;
@@ -91,6 +93,45 @@ void main() {
     feeds.deliver(b, entry(turn, rootB.id, 'not for a'));
     expect(await got.moveNext(), isTrue);
     expect((got.current as Entry).id, live.id);
+    await got.cancel();
+  });
+
+  test('a loop subscribed to turn, admission and event kinds gets each raw '
+      'event just before its admission, replayed and live', () async {
+    final admittedKind = DecisionEntryKind.eventAdmittedToMission;
+    final eventKind = Kind.parse('event')!;
+    final raw = entry(eventKind, null, 'first message');
+    final admission = entry(admittedKind, null, raw.id.hex);
+    final rootA = entry(UsersAssignedToTrajectory.kind, null, 'a');
+    router
+      ..route(raw)
+      ..started(a, admission, raw.id)
+      ..rooted(a, rootA);
+    final firstTurn = entry(turn, rootA.id, 'reply');
+    router.route(firstTurn);
+
+    final feed = LogbookReader(
+      feeds.pathOf(loop1),
+    ).subscribe(kinds: {turn, admittedKind, eventKind});
+    final got = StreamIterator(feed);
+    final seen = <ObjectId>[];
+    while (await got.moveNext() && got.current is Entry) {
+      seen.add((got.current as Entry).id);
+    }
+    expect(seen, [raw.id, admission.id, firstTurn.id]);
+
+    final rawLive = entry(eventKind, null, 'second message');
+    final placedLive = entry(admittedKind, null, rawLive.id.hex);
+    router.route(rawLive);
+    for (final e in router.placed(a, placedLive, rawLive.id)!) {
+      feeds.deliver(a, e);
+    }
+    for (final want in [rawLive, placedLive]) {
+      expect(await got.moveNext(), isTrue);
+      final e = got.current as Entry;
+      expect(e.id, want.id);
+      expect(e.recorded, want.recorded);
+    }
     await got.cancel();
   });
 
