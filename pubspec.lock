@@ -156,11 +156,12 @@ packages:
   is_airlock_api:
     dependency: "direct main"
     description:
-      name: is_airlock_api
-      sha256: "46d3b24481562fb350bf8e9fb08bdd3201c4abb0cd1a4ce921e8601092f4d122"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.0"
+      path: "."
+      ref: "v0.9.0"
+      resolved-ref: c42a36a16ade988e8462b53640f638c11cc422f8
+      url: "https://github.com/intersyntactic/airlock_api.git"
+    source: git
+    version: "0.9.0"
   is_annotation_shapes:
     dependency: transitive
     description:
@@ -189,8 +190,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "6b08790c02fd005f418196873c9206df68d3fb43"
-      resolved-ref: "6b08790c02fd005f418196873c9206df68d3fb43"
+      ref: d8f1cf4f1e926f5b1b5d4b3af83231b102373455
+      resolved-ref: d8f1cf4f1e926f5b1b5d4b3af83231b102373455
       url: "https://github.com/intersyntactic/docking_station.git"
     source: git
     version: "0.0.1"
@@ -214,18 +215,19 @@ packages:
     dependency: "direct main"
     description:
       name: is_logbook
-      sha256: "4ba536d7a6354f93667c757fb741e4b0fc9bbd88a70aef7fdd4ba762ec05a598"
+      sha256: "72f997c9ea6368e30a8350b244551110469f2a6d88a313f283401f2a90028056"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.2.0"
   is_logbook_client:
     dependency: "direct main"
     description:
-      name: is_logbook_client
-      sha256: e345a66b0b516377c0fd149dc4c81bb190abdd2fb2308214e511da7baf803dc2
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.0"
+      path: "."
+      ref: fcb4c498f8213d49b500d61a14925e8eb46dc624
+      resolved-ref: fcb4c498f8213d49b500d61a14925e8eb46dc624
+      url: "https://github.com/intersyntactic/logbook_client.git"
+    source: git
+    version: "0.2.0"
   is_path_confinement:
     dependency: transitive
     description:

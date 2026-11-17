@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
-import 'package:is_logbook/is_logbook.dart' show EntryHash;
+import 'package:is_logbook/is_logbook.dart' show ObjectId;
 import 'package:is_shapes/is_shapes.dart' show MissionId, TrajectoryId;
 
 import 'users_assigned_to_trajectory.dart';
@@ -15,13 +15,13 @@ final class Pools {
 
   final SplayTreeSet<LoopUser> _freeLoops;
   final SplayTreeSet<Suit> _freeSuits;
-  final _held = <TrajectoryId, (UsersAssignedToTrajectory, EntryHash)>{};
+  final _held = <TrajectoryId, (UsersAssignedToTrajectory, ObjectId)>{};
 
   /// [trajectory]'s users and its chain root, if it has been handed any.
-  (UsersAssignedToTrajectory, EntryHash)? of(TrajectoryId trajectory) =>
+  (UsersAssignedToTrajectory, ObjectId)? of(TrajectoryId trajectory) =>
       _held[trajectory];
 
-  Iterable<(UsersAssignedToTrajectory, EntryHash)> get live => _held.values;
+  Iterable<(UsersAssignedToTrajectory, ObjectId)> get live => _held.values;
 
   /// The trajectory [user] runs, if any.
   TrajectoryId? heldBy(LoopUser user) {
@@ -32,7 +32,7 @@ final class Pools {
   }
 
   /// Takes [users], recorded at [root].
-  void take(UsersAssignedToTrajectory users, EntryHash root) {
+  void take(UsersAssignedToTrajectory users, ObjectId root) {
     _freeLoops.remove(users.loopUser);
     _freeSuits.remove(users.suit);
     _held[users.trajectory] = (users, root);

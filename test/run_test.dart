@@ -10,31 +10,31 @@ import 'package:is_docking_station/is_docking_station.dart'
     show DecisionEntryKind, MissionEnded, encodeDecision;
 import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_flight_rules/is_flight_rules.dart' show ProgramsNetwork;
-import 'package:is_logbook/is_logbook.dart' show EntryHash;
+import 'package:is_logbook/is_logbook.dart' show ObjectId;
 import 'package:is_logbook/service.dart' show Kind;
 import 'package:is_logbook_client/is_logbook_client.dart'
     show CaughtUp, Entry, Subscribed;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 import 'package:is_shapes/is_shapes.dart'
-    show DecidedBy, EntryId, MissionId, TrajectoryId;
+    show DecidedBy, MissionId, TrajectoryId;
 import 'package:test/test.dart';
 
 void main() {
   final turn = Kind.parse('turn')!;
   final returned = Kind.parse('returned')!;
   final team = ModelSignInName.parse('team')!;
-  var next = 0;
-
-  Entry entry(Kind kind, EntryHash? previous, Uint8List body) => Entry(
-    hash: EntryHash.parse((++next).toRadixString(16).padLeft(64, '0'))!,
-    kind: kind,
-    previous: previous,
-    recorded: Uint8List.fromList([
+  Entry entry(Kind kind, ObjectId? previous, Uint8List body) {
+    final recorded = Uint8List.fromList([
       ...utf8.encode('${kind.name}\n${previous?.hex ?? '-'}\n'),
       ...body,
-    ]),
-    checked: false,
-  );
+    ]);
+    return Entry(
+      id: ObjectId.of(recorded),
+      kind: kind,
+      previous: previous,
+      recorded: recorded,
+    );
+  }
 
   Entry assigned(TrajectoryId trajectory, MissionId mission, int n) => entry(
     UsersAssignedToTrajectory.kind,
@@ -47,7 +47,7 @@ void main() {
     ).encode(),
   );
 
-  Entry said(EntryHash previous, String text) =>
+  Entry said(ObjectId previous, String text) =>
       entry(turn, previous, Uint8List.fromList(utf8.encode(text)));
 
   // An admission that starts a mission and its first trajectory, under
@@ -75,7 +75,7 @@ void main() {
   Entry ended(MissionId mission) {
     final (kind, body) = encodeDecision(
       MissionEnded(
-        EntryHash.parse('e5' * 32)!,
+        ObjectId.parse('e5' * 32)!,
         by: DecidedBy.rules,
         mission: mission,
       ),
@@ -106,7 +106,7 @@ void main() {
     final delivered = <(TrajectoryId, Entry)>[];
     final router = TrajectoryRouter(
       outcomeKinds: {returned},
-      proposalOf: (_, body) => EntryId.parse(utf8.decode(body)),
+      proposalOf: (_, body) => ObjectId.parse(utf8.decode(body)),
     );
     final run = runLoopLauncher(
       subscribe: () => logbook.stream,
@@ -114,7 +114,7 @@ void main() {
         final e = entry(kind, previous, body);
         sent.add(e);
         logbook.add(e);
-        return e.hash;
+        return e.id;
       },
       pools: Pools(
         loopUsers: [
@@ -141,7 +141,7 @@ void main() {
   }
 
   List<String> kindsOf(Iterable<Entry> entries) => [
-    for (final e in entries) e.kind!.name,
+    for (final e in entries) e.kind.name,
   ];
 
   test("once caught up, a trajectory's entries go to its loop, its history "
@@ -152,7 +152,7 @@ void main() {
     final b = TrajectoryId.parse('b2' * 32)!;
     final rootA = assigned(a, mission, 1);
     final rootB = assigned(b, MissionId.parse('d4' * 32)!, 2);
-    final a1 = said(rootA.hash, 'a1');
+    final a1 = said(rootA.id, 'a1');
     l.logbook
       ..add(rootA)
       ..add(rootB)
@@ -162,12 +162,12 @@ void main() {
     expect(l.delivered, isEmpty, reason: 'before caught up, history only');
     expect(l.router.history(a), [rootA, a1]);
 
-    final a2 = said(a1.hash, 'a2');
-    final b1 = said(rootB.hash, 'b1');
+    final a2 = said(a1.id, 'a2');
+    final b1 = said(rootB.id, 'b1');
     final outcome = entry(
       returned,
       null,
-      Uint8List.fromList(utf8.encode(EntryId.of(a2.recorded).hex)),
+      Uint8List.fromList(utf8.encode(a2.id.hex)),
     );
     l.logbook
       ..add(a2)
@@ -179,7 +179,7 @@ void main() {
 
     l.logbook
       ..add(ended(mission))
-      ..add(said(a2.hash, 'late'));
+      ..add(said(a2.id, 'late'));
     await pumpEventQueue();
     expect(l.delivered, hasLength(3), reason: 'nothing after the end');
     expect(l.router.history(a), isEmpty);
@@ -223,9 +223,9 @@ void main() {
     final first = UsersAssignedToTrajectory.decode(l.sent[0].body)!;
     expect(first.trajectory, trajectoryOf(p1));
     expect(first.mission, missionOf(p1), reason: 'ids hash the bytes');
-    expect(l.router.history(trajectoryOf(p1)).map((e) => e.hash), [
-      p1.hash,
-      l.sent[0].hash,
+    expect(l.router.history(trajectoryOf(p1)).map((e) => e.id), [
+      p1.id,
+      l.sent[0].id,
     ], reason: 'the feed starts with the admission, then the root');
     expect(l.machine.calls.where((c) => c.startsWith('start')), [
       'start loop-1',

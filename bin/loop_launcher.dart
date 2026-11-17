@@ -2,7 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:is_airlock_api/is_airlock_api.dart'
-    show LoopUser, ReturnedProposal, Suit;
+    show
+        LoopUser,
+        Suit,
+        readResultOfActionOrWhyRefused,
+        resultOfActionOrWhyRefusedKind;
 import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_logbook_client/is_logbook_client.dart';
 import 'package:is_loop_launcher/is_loop_launcher.dart';
@@ -53,18 +57,22 @@ Future<void> main() async {
     loopUsers: loopUsers,
     suits: [for (var n = 1; n <= poolSize; n++) Suit.parse('suit-$n')!],
   );
-  final returned = Kind.parse(ReturnedProposal.kind)!;
   final router = TrajectoryRouter(
-    outcomeKinds: {returned},
-    // A `returned` for an action with no proposal is a plain line, not this
-    // shape; it answers no loop.
+    outcomeKinds: {Kind.parse(resultOfActionOrWhyRefusedKind)!},
+    // An action with no proposal is recorded under the same kind as a plain
+    // line; it answers no loop. The proposal's EntryId and the logbook's id
+    // are both the sha256 of its text.
     proposalOf: (_, body) {
+      final Object? json;
       try {
-        return ReturnedProposal.fromJson(jsonDecode(utf8.decode(body)))
-            .proposed;
+        json = jsonDecode(utf8.decode(body));
       } on FormatException {
         return null;
       }
+      return switch (readResultOfActionOrWhyRefused(json)) {
+        (:final proposed, result: _) => ObjectId.parse(proposed.hex),
+        null => null,
+      };
     },
   );
   final feeds = LoopFeeds(
@@ -79,7 +87,7 @@ Future<void> main() async {
     subscribe: reader.subscribe,
     send: (kind, previous, body) async =>
         switch (await writer.write(kind, body, previous: previous)) {
-          Written(:final entry) => entry,
+          Written(:final entry) || AlreadyRecorded(:final entry) => entry,
           NotTip(:final tip) => throw StateError('$kind: not tip, $tip is'),
           WriteRefused(:final why) => throw StateError('$kind refused: $why'),
           WriteFailed(:final why) => throw StateError('$kind failed: $why'),
