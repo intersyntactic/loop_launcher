@@ -1,11 +1,10 @@
-/// loop_launcher: it launches each journey path's agent loop, as a loop user
-/// of its own, recording each handout itself (RULINGS: "Each journey path
-/// has its own agent loop, holding only the model sign-ins its rules
-/// allow").
+/// loop_launcher: starts each trajectory's agent loop as a loop user of its
+/// own, with a suit of its own for its programs, recording each handout.
 library;
 
-export 'src/assigned.dart';
-export 'src/launcher.dart';
-export 'src/path_router.dart';
+export 'src/loop_feeds.dart';
 export 'src/pools.dart';
 export 'src/run.dart';
+export 'src/starts_and_stops_trajectory_processes.dart';
+export 'src/trajectory_router.dart';
+export 'src/users_assigned_to_trajectory.dart';
