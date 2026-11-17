@@ -62,6 +62,17 @@ void main() {
     expect(router.route(frame(turn, outcome.id, 'airlock next')), isNull);
   });
 
+  test('a body naming a live proposal, under a kind not counted as an '
+      'outcome, goes nowhere', () {
+    final proposal = frame(turn, rootA.id, 'propose');
+    router.route(proposal);
+    final decided = frame(turn, null, 'airlock chain start');
+    final other = Kind.parse('another-outcome-kind')!;
+    expect(router.route(decided), isNull);
+    expect(router.route(frame(other, decided.id, proposal.id.hex)), isNull);
+    expect(router.history(a), [rootA, proposal]);
+  });
+
   test('an outcome answering no live proposal, or no proposal, goes '
       'nowhere', () {
     final elsewhere = frame(turn, null, 'x');
