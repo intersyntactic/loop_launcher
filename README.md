@@ -47,6 +47,22 @@ the journey's loops are stopped, its programs closed, its users freed, and
 its paths dropped, so no later start brings them up again. A freed suit is
 wiped before it is handed out again.
 
+## Waiting to start
+
+A path waits, with no users, when no loop user or suit is free, or when
+its rules sign in on the Team login and K paths that do already have users
+(Nick, 17 Nov: K = 4 for the demo, while K is the only brake). It is
+recorded once, as a `waiting-to-start` entry on a chain of its own:
+
+    {"journeyPath": <hex>}
+
+Its `assigned` entry, written when there is room, ends the wait (Nick,
+17 Nov), so a path with users never waits. Each journey's `ended` makes
+room, and the waiting paths are brought up in the record's order, oldest
+first. After a restart, who is waiting is read from the record, and not
+recorded again. Why a path waits goes to the operator's log only. What its
+travellers are told, and who tells them, is decided elsewhere.
+
 ## The `assigned` entry
 
     {"journeyPath": <hex>, "journey": <hex>, "loopUser": "loop-<n>",
