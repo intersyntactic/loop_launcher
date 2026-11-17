@@ -11,11 +11,14 @@ import 'package:is_airlock_api/is_airlock_api.dart' show WaitingToStart;
 import 'package:is_docking_station/is_docking_station.dart'
     show
         EventAdmitted,
+        EventDeclined,
         DecisionEntryKind,
         JourneyEnded,
         InJourney,
+        IntoJourney,
         StartsJourney,
         StartsJourneyPath,
+        UnderJourneyPath,
         decodeDecision;
 import 'package:is_journal/is_journal.dart' show EntryHash;
 import 'package:is_journal/service.dart' show Kind;
@@ -246,7 +249,8 @@ Future<void> runLoopLauncher({
             if (caughtUp) await bringUp(path, journey, pathRules);
           case JourneyEnded(:final journey):
             await end(journey, stop: caughtUp);
-          case _:
+          case EventAdmitted(placement: UnderJourneyPath() || IntoJourney()):
+          case EventDeclined():
             break;
         }
       case CaughtUp():
