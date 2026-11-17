@@ -39,6 +39,7 @@ void main() {
     await Directory('${dir.path}/loop-1').create();
     await Directory('${dir.path}/loop-2').create();
     router = TrajectoryRouter(
+      eventKinds: {Kind.parse('event')!},
       outcomeKinds: {returned},
       proposalOf: (_, body) => ObjectId.parse(utf8.decode(body)),
     );
