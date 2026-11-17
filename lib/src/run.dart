@@ -163,7 +163,8 @@ Future<void> runLoopLauncher({
             UsersAssignedToTrajectory.decode(body) ??
             (throw StateError('cannot read ${hash.hex}'));
         pools.take(users, hash);
-        router.rooted(users.trajectory, hash);
+        router.rooted(users.trajectory, item);
+        if (caughtUp) deliver(users.trajectory, item);
       case Entry(:final kind, :final hash, :final body)
           when kind == waitingToStartKind:
         try {
@@ -206,12 +207,17 @@ Future<void> runLoopLauncher({
                   )),
             );
             started[trajectory] = (mission, typed);
+            router.started(trajectory, item);
             if (caughtUp) await bringUp(trajectory, mission, typed);
+          case EventAdmittedToMission(
+            placement: OnTrajectory(:final trajectory),
+          ):
+            if (router.placed(trajectory, item) && caughtUp) {
+              deliver(trajectory, item);
+            }
           case MissionEnded(:final mission):
             await end(mission, stop: caughtUp);
-          case EventAdmittedToMission(
-            placement: OnTrajectory() || IntoMission(),
-          ):
+          case EventAdmittedToMission(placement: IntoMission()):
           case EventNotAdmittedToMission():
             break;
         }

@@ -2,6 +2,7 @@
 /// own, with a suit of its own for its programs, recording each handout.
 library;
 
+export 'src/loop_feeds.dart';
 export 'src/pools.dart';
 export 'src/run.dart';
 export 'src/starts_and_stops_trajectory_processes.dart';

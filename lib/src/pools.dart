@@ -23,6 +23,14 @@ final class Pools {
 
   Iterable<(UsersAssignedToTrajectory, EntryHash)> get live => _held.values;
 
+  /// The trajectory [user] runs, if any.
+  TrajectoryId? heldBy(LoopUser user) {
+    for (final (users, _) in _held.values) {
+      if (users.loopUser == user) return users.trajectory;
+    }
+    return null;
+  }
+
   /// Takes [users], recorded at [root].
   void take(UsersAssignedToTrajectory users, EntryHash root) {
     _freeLoops.remove(users.loopUser);

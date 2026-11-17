@@ -16,7 +16,7 @@ import 'package:is_logbook_client/is_logbook_client.dart'
     show CaughtUp, Entry, Subscribed;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 import 'package:is_shapes/is_shapes.dart'
-    show DecidedBy, MissionId, TrajectoryId;
+    show DecidedBy, EntryId, MissionId, TrajectoryId;
 import 'package:test/test.dart';
 
 void main() {
@@ -106,7 +106,7 @@ void main() {
     final delivered = <(TrajectoryId, Entry)>[];
     final router = TrajectoryRouter(
       outcomeKinds: {returned},
-      proposalOf: (_, body) => EntryHash.parse(utf8.decode(body))!,
+      proposalOf: (_, body) => EntryId.parse(utf8.decode(body)),
     );
     final run = runLoopLauncher(
       subscribe: () => logbook.stream,
@@ -160,14 +160,14 @@ void main() {
       ..add(const CaughtUp(null));
     await pumpEventQueue();
     expect(l.delivered, isEmpty, reason: 'before caught up, history only');
-    expect(l.router.history(a), [a1]);
+    expect(l.router.history(a), [rootA, a1]);
 
     final a2 = said(a1.hash, 'a2');
     final b1 = said(rootB.hash, 'b1');
     final outcome = entry(
       returned,
       null,
-      Uint8List.fromList(utf8.encode(a2.hash.hex)),
+      Uint8List.fromList(utf8.encode(EntryId.of(a2.recorded).hex)),
     );
     l.logbook
       ..add(a2)
@@ -223,6 +223,10 @@ void main() {
     final first = UsersAssignedToTrajectory.decode(l.sent[0].body)!;
     expect(first.trajectory, trajectoryOf(p1));
     expect(first.mission, missionOf(p1), reason: 'ids hash the bytes');
+    expect(l.router.history(trajectoryOf(p1)).map((e) => e.hash), [
+      p1.hash,
+      l.sent[0].hash,
+    ], reason: 'the feed starts with the admission, then the root');
     expect(l.machine.calls.where((c) => c.startsWith('start')), [
       'start loop-1',
       'start loop-2',
