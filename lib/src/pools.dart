@@ -54,14 +54,11 @@ final class Pools {
     _ => null,
   };
 
-  /// Frees the users of every trajectory in [mission].
-  void ended(MissionId mission) {
-    _held.removeWhere((_, held) {
-      final (users, _) = held;
-      if (users.mission != mission) return false;
+  /// Frees [trajectory]'s users, if it holds any.
+  void free(TrajectoryId trajectory) {
+    if (_held.remove(trajectory) case (final users, _)?) {
       _freeLoops.add(users.loopUser);
       _freeSuits.add(users.suit);
-      return true;
-    });
+    }
   }
 }
