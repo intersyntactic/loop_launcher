@@ -81,6 +81,23 @@ void main() {
     return entry(kind, null, body);
   }
 
+  // A person's close of [admitted]'s trajectory.
+  Entry closed(Entry admitted, int n) => entry(
+    DecisionEntryKind.trajectoryClosed,
+    null,
+    Uint8List.fromList(
+      utf8.encode(
+        '{"event":"${(0xc000 + n).toRadixString(16).padLeft(64, '0')}",'
+        '"by":"rules","reading":{"case":"person-asked-to-close-trajectory",'
+        '"addressInExternalSystem":"teams:19:x;messageid=$n",'
+        '"containingAddress":"teams:19:x","key":"invoke:$n",'
+        '"from":"teams:t/p","message":"19:x;messageid=$n|1"},'
+        '"trajectory":"${TrajectoryId.of(admitted.recorded).hex}",'
+        '"mission":"${MissionId.of(admitted.recorded).hex}"}',
+      ),
+    ),
+  );
+
   TrajectoryId trajectoryOf(Entry admitted) =>
       TrajectoryId.of(admitted.recorded);
   MissionId missionOf(Entry admitted) => MissionId.of(admitted.recorded);
@@ -321,6 +338,62 @@ void main() {
       trajectoryOf(p3),
       reason: 'the oldest waiting takes the free claude place',
     );
+
+    await l.logbook.close();
+    await l.run;
+  });
+
+  test("a closed trajectory's loop stops and its users go to the oldest "
+      'waiting; its mission and the others run on', () async {
+    final l = launch(users: 2, loopLimits: 'team:4');
+    final [p1, p2, p3] = [admitted(1), admitted(2), admitted(3)];
+    l.logbook
+      ..add(const CaughtUp(null))
+      ..add(p1)
+      ..add(p2)
+      ..add(p3);
+    await pumpEventQueue();
+    expect(kindsOf(l.sent), [
+      'users-assigned-to-trajectory',
+      'users-assigned-to-trajectory',
+      'waiting-to-start',
+    ]);
+
+    l.logbook.add(closed(p1, 1));
+    await pumpEventQueue();
+    expect(l.machine.calls.skip(6), [
+      'stop loop-1',
+      'close suit-1',
+      'wipe suit-1',
+      'open suit-1 noNetworkOfTheirOwn',
+      'start loop-1',
+    ]);
+    expect(
+      UsersAssignedToTrajectory.decode(l.sent[3].body)!.trajectory,
+      trajectoryOf(p3),
+    );
+    expect(l.router.history(trajectoryOf(p1)), isEmpty);
+    expect(l.router.history(trajectoryOf(p2)), isNotEmpty);
+
+    await l.logbook.close();
+    await l.run;
+  });
+
+  test('a closed trajectory that was waiting never starts', () async {
+    final l = launch(users: 1, loopLimits: 'team:4');
+    final [p1, p2] = [admitted(1), admitted(2)];
+    l.logbook
+      ..add(const CaughtUp(null))
+      ..add(p1)
+      ..add(p2)
+      ..add(closed(p2, 2))
+      ..add(ended(missionOf(p1)));
+    await pumpEventQueue();
+    expect(kindsOf(l.sent), [
+      'users-assigned-to-trajectory',
+      'waiting-to-start',
+    ]);
+    expect(l.router.history(trajectoryOf(p2)), isEmpty);
 
     await l.logbook.close();
     await l.run;

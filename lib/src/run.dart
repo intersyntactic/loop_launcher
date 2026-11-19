@@ -14,6 +14,7 @@ import 'package:is_docking_station/is_docking_station.dart'
         OnTrajectory,
         StartsMission,
         StartsTrajectory,
+        TrajectoryClosed,
         decodeDecision;
 import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_flight_rules/is_flight_rules.dart'
@@ -43,8 +44,8 @@ final waitingToStartKind = Kind.parse(WaitingToStart.kind)!;
 /// [loopLimits] sets no limit for, or one whose limit is reached by
 /// trajectories that have users and whose rules allow it. Allowed, not
 /// chosen: a trajectory may switch to any sign-in its rules allow. A
-/// mission's end stops its loops, frees its users and brings up whoever
-/// waits, oldest first.
+/// mission's end stops its loops, and a trajectory's close stops its own;
+/// either frees the users and brings up whoever waits, oldest first.
 ///
 /// Entries on a live trajectory's chain are kept in [router]; once caught
 /// up, each is also handed to [deliver].
@@ -126,13 +127,18 @@ Future<void> runLoopLauncher({
     }
   }
 
-  Future<void> end(MissionId mission, {required bool stop}) async {
-    final ending = [
+  /// Stops and frees every trajectory [ending] picks, forgets it, and once
+  /// caught up ([stop]) brings up whoever waits, oldest first.
+  Future<void> release(
+    bool Function(TrajectoryId trajectory, MissionId mission) ending, {
+    required bool stop,
+  }) async {
+    final freed = [
       for (final (users, _) in pools.live)
-        if (users.mission == mission) users,
+        if (ending(users.trajectory, users.mission)) users,
     ];
     if (stop) {
-      for (final users in ending) {
+      for (final users in freed) {
         try {
           await machine.stopTrajectoryLoop(users.loopUser);
         } on LaunchFailed catch (e) {
@@ -145,12 +151,20 @@ Future<void> runLoopLauncher({
         }
       }
     }
-    for (final users in ending) {
+    for (final users in freed) {
       router.ended(users.trajectory);
+      pools.free(users.trajectory);
     }
-    pools.ended(mission);
-    waiting.removeWhere((t) => started[t]?.$1 == mission);
-    started.removeWhere((_, s) => s.$1 == mission);
+    final gone = [
+      for (final MapEntry(key: trajectory, value: (mission, _))
+          in started.entries)
+        if (ending(trajectory, mission)) trajectory,
+    ];
+    for (final trajectory in gone) {
+      router.ended(trajectory);
+      waiting.remove(trajectory);
+      started.remove(trajectory);
+    }
     if (!stop) return;
     for (final MapEntry(key: trajectory, value: (mission, rules))
         in started.entries.toList()) {
@@ -219,7 +233,9 @@ Future<void> runLoopLauncher({
               }
             }
           case MissionEnded(:final mission):
-            await end(mission, stop: caughtUp);
+            await release((_, m) => m == mission, stop: caughtUp);
+          case TrajectoryClosed(:final trajectory):
+            await release((t, _) => t == trajectory, stop: caughtUp);
           case EventAdmittedToMission(placement: IntoMission(), :final event):
           case EventNotAdmittedToMission(:final event):
             router.decided(event);
