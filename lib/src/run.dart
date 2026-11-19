@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:is_airlock_api/is_airlock_api.dart' show WaitingToStart;
+import 'package:is_airlock_api/is_airlock_api.dart'
+    show JsonObject, WaitingToStart;
 import 'package:is_docking_station/is_docking_station.dart'
     show
         DecisionEntryKind,
@@ -169,7 +170,8 @@ Future<void> runLoopLauncher({
           when kind == waitingToStartKind:
         try {
           waiting.add(
-            WaitingToStart.fromJson(jsonDecode(utf8.decode(body))).trajectory,
+            WaitingToStart.fromJson(JsonObject.decode(utf8.decode(body)))
+                .trajectory,
           );
         } on FormatException catch (e) {
           throw StateError('cannot read ${id.hex}: $e');
