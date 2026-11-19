@@ -157,10 +157,10 @@ packages:
     dependency: "direct main"
     description:
       name: is_airlock_api
-      sha256: "0c100ee3913de48cbe259076440e4bda89c14668e7e37b7883d68af8a8231a60"
+      sha256: f87f956919110966bd4714077c52876e72db2f3a533ea2ea7eb7ab10023958d0
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.1"
+    version: "0.11.0"
   is_annotation_shapes:
     dependency: transitive
     description:
@@ -197,18 +197,18 @@ packages:
     dependency: "direct main"
     description:
       name: is_effects
-      sha256: "3ab745e8d01af33d9db6934d39d9ed6d69c1da089ed5d6c465e938a26e63234d"
+      sha256: e1973020e8bd79d4b9f9185171fb7f623c3de3e82fc72d5f9e71e08ec32064ca
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0"
+    version: "0.9.0"
   is_flight_rules:
     dependency: "direct main"
     description:
       name: is_flight_rules
-      sha256: "2ef0e91cd63c4b339674c5c09af6f7b6e883926c9bf9a7a1b43d68531236c513"
+      sha256: "3bc697f7f12d4b43f50f5bb6a40def1c216bd81c04736afffc555dc68fdf4fd3"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.1"
+    version: "0.1.2"
   is_logbook:
     dependency: "direct main"
     description:

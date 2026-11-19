@@ -64,13 +64,13 @@ Future<void> main() async {
     // line; it answers no loop. The proposal's EntryId and the logbook's id
     // are both the sha256 of its text.
     proposalOf: (_, body) {
-      final Object? json;
+      final String text;
       try {
-        json = jsonDecode(utf8.decode(body));
+        text = utf8.decode(body);
       } on FormatException {
         return null;
       }
-      return switch (readOutcomeOfProposedAction(json)) {
+      return switch (readOutcomeOfProposedAction(text)) {
         (:final proposed, result: _) => ObjectId.parse(proposed.hex),
         null => null,
       };
