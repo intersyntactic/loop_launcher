@@ -18,7 +18,7 @@ import 'package:is_docking_station/is_docking_station.dart'
         decodeDecision;
 import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_flight_rules/is_flight_rules.dart'
-    show WhatMayLeaveThisMachine;
+    show FlightRules, WhatMayLeaveThisMachine;
 import 'package:is_logbook/is_logbook.dart' show ObjectId;
 import 'package:is_logbook/service.dart' show Kind;
 import 'package:is_logbook_client/is_logbook_client.dart'
@@ -212,13 +212,13 @@ Future<void> runLoopLauncher({
               InMission(:final mission) => mission,
               StartsMission() => MissionId.of(bytes),
             };
-            final typed = WhatMayLeaveThisMachine.fromJson(
+            final typed = FlightRules.fromJson(
               rules ??
                   (throw StateError(
                     '${id.hex} starts a trajectory with '
                     'no rules',
                   )),
-            );
+            ).whatMayLeaveThisMachine;
             started[trajectory] = (mission, typed);
             router.started(trajectory, item, event);
             if (caughtUp) await bringUp(trajectory, mission, typed);

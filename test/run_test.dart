@@ -49,9 +49,9 @@ void main() {
       entry(turn, previous, Uint8List.fromList(utf8.encode(text)));
 
   // An admission that starts a mission and its first trajectory, under
-  // rules whose model calls may go out as [signIns]. [n] keeps each one's
-  // bytes, and so its ids, its own.
-  Entry admitted(int n, [List<String> signIns = const []]) => entry(
+  // rules whose model calls may go out as [signIns], starting on the first.
+  // [n] keeps each one's bytes, and so its ids, its own.
+  Entry admitted(int n, List<String> signIns) => entry(
     DecisionEntryKind.eventAdmittedToMission,
     null,
     Uint8List.fromList(
@@ -63,9 +63,12 @@ void main() {
         '"key":"message:$n","node":{"shape":"UserSaid",'
         '"author":"teams:t/p","source":"19:x;messageid=$n|1","text":"hi"}},'
         '"startsTrajectory":true,"startsMission":true,'
-        '"rules":{"modelSignInsCallsMayGoOutAs":${jsonEncode(signIns)},'
+        '"rules":{"whatMayLeaveThisMachine":'
+        '{"modelSignInsCallsMayGoOutAs":${jsonEncode(signIns)},'
         '"sitesTheWebDriverMayReach":[],'
-        '"programsNetwork":"noNetworkOfTheirOwn"},"startsTurn":true}',
+        '"programsNetwork":"noNetworkOfTheirOwn"},'
+        '"startingModel":{"signIn":"${signIns.first}","model":"m"}},'
+        '"startsTurn":true}',
       ),
     ),
   );
@@ -207,13 +210,13 @@ void main() {
   test('a Team-login trajectory past the limit, or one finding no user '
       'free, waits with no users, recorded once, until a mission ends; '
       'the oldest waiting starts first', () async {
-    final l = launch(users: 3, loopLimits: 'team:2');
+    final l = launch(users: 3, loopLimits: 'team:2,other:9');
     final [p1, p2, p3, p4, p5] = [
       admitted(1, ['team']),
       admitted(2, ['team']),
       admitted(3, ['team']),
-      admitted(4),
-      admitted(5),
+      admitted(4, ['other']),
+      admitted(5, ['other']),
     ];
     l.logbook
       ..add(const CaughtUp(null))
@@ -346,7 +349,11 @@ void main() {
   test("a closed trajectory's loop stops and its users go to the oldest "
       'waiting; its mission and the others run on', () async {
     final l = launch(users: 2, loopLimits: 'team:4');
-    final [p1, p2, p3] = [admitted(1), admitted(2), admitted(3)];
+    final [p1, p2, p3] = [
+      admitted(1, ['team']),
+      admitted(2, ['team']),
+      admitted(3, ['team']),
+    ];
     l.logbook
       ..add(const CaughtUp(null))
       ..add(p1)
@@ -381,7 +388,10 @@ void main() {
 
   test('a closed trajectory that was waiting never starts', () async {
     final l = launch(users: 1, loopLimits: 'team:4');
-    final [p1, p2] = [admitted(1), admitted(2)];
+    final [p1, p2] = [
+      admitted(1, ['team']),
+      admitted(2, ['team']),
+    ];
     l.logbook
       ..add(const CaughtUp(null))
       ..add(p1)
