@@ -24,6 +24,7 @@ import 'package:is_logbook_client/is_logbook_client.dart'
     show CaughtUp, Entry, Subscribed;
 import 'package:is_shapes/is_shapes.dart' show MissionId, TrajectoryId;
 
+import 'loop_limit_per_model_sign_in.dart';
 import 'pools.dart';
 import 'starts_and_stops_trajectory_processes.dart';
 import 'trajectory_router.dart';
@@ -38,9 +39,12 @@ final waitingToStartKind = Kind.parse(WaitingToStart.kind)!;
 /// starts its loop, skipping whatever is already done.
 ///
 /// A trajectory waits, recorded once as `waiting-to-start`, when no users are
-/// free or when [teamLoginLimit] trajectories whose calls may go out as
-/// [teamLogin] already have users. A mission's end stops its loops, frees
-/// its users and brings up whoever waits, oldest first.
+/// free, or when its rules let its calls go out as a sign-in that
+/// [loopLimits] sets no limit for, or one whose limit is reached by
+/// trajectories that have users and whose rules allow it. Allowed, not
+/// chosen: a trajectory may switch to any sign-in its rules allow. A
+/// mission's end stops its loops, frees its users and brings up whoever
+/// waits, oldest first.
 ///
 /// Entries on a live trajectory's chain are kept in [router]; once caught
 /// up, each is also handed to [deliver].
@@ -55,16 +59,17 @@ Future<void> runLoopLauncher({
   required Pools pools,
   required TrajectoryRouter router,
   required void Function(TrajectoryId trajectory, Entry entry) deliver,
-  required ModelSignInName teamLogin,
-  required int teamLoginLimit,
+  required LoopLimitPerModelSignIn loopLimits,
   required StartsAndStopsTrajectoryProcesses machine,
   required void Function(String line) say,
 }) async {
   final started = <TrajectoryId, (MissionId, WhatMayLeaveThisMachine)>{};
   final waiting = <TrajectoryId>{};
 
-  bool usesTeamLogin(WhatMayLeaveThisMachine rules) =>
-      rules.modelSignInsCallsMayGoOutAs.contains(teamLogin);
+  int holdingUsers(ModelSignInName signIn) => started.entries
+      .where((s) => s.value.$2.allowsModelCall(signIn))
+      .where((s) => pools.of(s.key) != null)
+      .length;
 
   Future<void> wait(TrajectoryId trajectory, String why) async {
     if (!waiting.add(trajectory)) return;
@@ -83,13 +88,13 @@ Future<void> runLoopLauncher({
   ) async {
     var held = pools.of(trajectory);
     if (held == null) {
-      if (usesTeamLogin(rules) &&
-          started.entries
-                  .where((s) => usesTeamLogin(s.value.$2))
-                  .where((s) => pools.of(s.key) != null)
-                  .length >=
-              teamLoginLimit) {
-        return wait(trajectory, '$teamLoginLimit trajectories use $teamLogin');
+      for (final signIn in rules.modelSignInsCallsMayGoOutAs) {
+        switch (loopLimits.of(signIn)) {
+          case null:
+            return wait(trajectory, 'no loop limit is set for $signIn');
+          case final limit when holdingUsers(signIn) >= limit:
+            return wait(trajectory, '$signIn is at its limit of $limit');
+        }
       }
       final users = pools.freeUsers(trajectory, mission);
       if (users == null) return wait(trajectory, 'no loop user or suit free');

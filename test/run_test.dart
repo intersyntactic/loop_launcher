@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
 import 'package:is_docking_station/is_docking_station.dart'
     show DecisionEntryKind, MissionEnded, encodeDecision;
-import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_flight_rules/is_flight_rules.dart' show ProgramsNetwork;
 import 'package:is_logbook/is_logbook.dart' show ObjectId;
 import 'package:is_logbook/service.dart' show Kind;
@@ -22,7 +21,6 @@ import 'package:test/test.dart';
 void main() {
   final turn = Kind.parse('turn')!;
   final returned = Kind.parse('returned')!;
-  final team = ModelSignInName.parse('team')!;
   Entry entry(Kind kind, ObjectId? previous, Uint8List body) {
     final recorded = Uint8List.fromList([
       ...utf8.encode('${kind.name}\n${previous?.hex ?? '-'}\n'),
@@ -51,9 +49,9 @@ void main() {
       entry(turn, previous, Uint8List.fromList(utf8.encode(text)));
 
   // An admission that starts a mission and its first trajectory, under
-  // rules whose model calls go out as the Team login or not. [n] keeps each
-  // one's bytes, and so its ids, its own.
-  Entry admitted(int n, {required bool team}) => entry(
+  // rules whose model calls may go out as [signIns]. [n] keeps each one's
+  // bytes, and so its ids, its own.
+  Entry admitted(int n, [List<String> signIns = const []]) => entry(
     DecisionEntryKind.eventAdmittedToMission,
     null,
     Uint8List.fromList(
@@ -65,7 +63,7 @@ void main() {
         '"key":"message:$n","node":{"shape":"UserSaid",'
         '"author":"teams:t/p","source":"19:x;messageid=$n|1","text":"hi"}},'
         '"startsTrajectory":true,"startsMission":true,'
-        '"rules":{"modelSignInsCallsMayGoOutAs":[${team ? '"team"' : ''}],'
+        '"rules":{"modelSignInsCallsMayGoOutAs":${jsonEncode(signIns)},'
         '"sitesTheWebDriverMayReach":[],'
         '"programsNetwork":"noNetworkOfTheirOwn"},"startsTurn":true}',
       ),
@@ -98,7 +96,7 @@ void main() {
     List<(TrajectoryId, Entry)> delivered,
     Future<void> run,
   })
-  launch({required int users, required int teamLoginLimit}) {
+  launch({required int users, required String loopLimits}) {
     final logbook = StreamController<Subscribed>();
     final sent = <Entry>[];
     final said = <String>[];
@@ -125,8 +123,7 @@ void main() {
       ),
       router: router,
       deliver: (trajectory, entry) => delivered.add((trajectory, entry)),
-      teamLogin: team,
-      teamLoginLimit: teamLoginLimit,
+      loopLimits: LoopLimitPerModelSignIn.parse(loopLimits)!,
       machine: machine,
       say: said.add,
     );
@@ -147,7 +144,7 @@ void main() {
 
   test("once caught up, a trajectory's entries go to its loop, its history "
       "first, and none after its mission ends", () async {
-    final l = launch(users: 2, teamLoginLimit: 4);
+    final l = launch(users: 2, loopLimits: 'team:4');
     final mission = MissionId.parse('c3' * 32)!;
     final a = TrajectoryId.parse('a1' * 32)!;
     final b = TrajectoryId.parse('b2' * 32)!;
@@ -193,13 +190,13 @@ void main() {
   test('a Team-login trajectory past the limit, or one finding no user '
       'free, waits with no users, recorded once, until a mission ends; '
       'the oldest waiting starts first', () async {
-    final l = launch(users: 3, teamLoginLimit: 2);
+    final l = launch(users: 3, loopLimits: 'team:2');
     final [p1, p2, p3, p4, p5] = [
-      admitted(1, team: true),
-      admitted(2, team: true),
-      admitted(3, team: true),
-      admitted(4, team: false),
-      admitted(5, team: false),
+      admitted(1, ['team']),
+      admitted(2, ['team']),
+      admitted(3, ['team']),
+      admitted(4),
+      admitted(5),
     ];
     l.logbook
       ..add(const CaughtUp(null))
@@ -255,8 +252,11 @@ void main() {
 
   test('a restart reads who is waiting from the logbook, and does not '
       'record it again', () async {
-    final l = launch(users: 3, teamLoginLimit: 1);
-    final [p1, p2] = [admitted(1, team: true), admitted(2, team: true)];
+    final l = launch(users: 3, loopLimits: 'team:1');
+    final [p1, p2] = [
+      admitted(1, ['team']),
+      admitted(2, ['team']),
+    ];
     l.logbook
       ..add(p1)
       ..add(p2)
@@ -273,6 +273,74 @@ void main() {
     await pumpEventQueue();
     expect(kindsOf(l.sent), ['users-assigned-to-trajectory']);
     expect(l.said, isEmpty);
+
+    await l.logbook.close();
+    await l.run;
+  });
+
+  test('each sign-in has its own limit; a trajectory holds a place under '
+      'every sign-in its rules allow, and waits on one with no limit '
+      'set', () async {
+    final l = launch(users: 5, loopLimits: 'claude:1,chatgpt:1');
+    final [p1, p2, p3, p4, p5] = [
+      admitted(1, ['claude']),
+      admitted(2, ['chatgpt']),
+      admitted(3, ['claude']),
+      admitted(4, ['claude', 'chatgpt']),
+      admitted(5, ['other']),
+    ];
+    l.logbook
+      ..add(const CaughtUp(null))
+      ..add(p1)
+      ..add(p2)
+      ..add(p3)
+      ..add(p4)
+      ..add(p5);
+    await pumpEventQueue();
+    expect(kindsOf(l.sent), [
+      'users-assigned-to-trajectory',
+      'users-assigned-to-trajectory',
+      'waiting-to-start',
+      'waiting-to-start',
+      'waiting-to-start',
+    ]);
+    expect(l.said, [
+      '${trajectoryOf(p3).hex}: waiting to start: '
+          'claude is at its limit of 1',
+      '${trajectoryOf(p4).hex}: waiting to start: '
+          'claude is at its limit of 1',
+      '${trajectoryOf(p5).hex}: waiting to start: '
+          'no loop limit is set for other',
+    ]);
+
+    l.logbook.add(ended(missionOf(p1)));
+    await pumpEventQueue();
+    expect(kindsOf(l.sent.skip(5)), ['users-assigned-to-trajectory']);
+    expect(
+      UsersAssignedToTrajectory.decode(l.sent[5].body)!.trajectory,
+      trajectoryOf(p3),
+      reason: 'the oldest waiting takes the free claude place',
+    );
+
+    await l.logbook.close();
+    await l.run;
+  });
+
+  test('a trajectory allowed two sign-ins uses up both limits', () async {
+    final l = launch(users: 3, loopLimits: 'claude:1,chatgpt:1');
+    final [p1, p2] = [
+      admitted(1, ['claude', 'chatgpt']),
+      admitted(2, ['chatgpt']),
+    ];
+    l.logbook
+      ..add(const CaughtUp(null))
+      ..add(p1)
+      ..add(p2);
+    await pumpEventQueue();
+    expect(kindsOf(l.sent), [
+      'users-assigned-to-trajectory',
+      'waiting-to-start',
+    ]);
 
     await l.logbook.close();
     await l.run;

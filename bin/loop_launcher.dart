@@ -7,7 +7,6 @@ import 'package:is_airlock_api/is_airlock_api.dart'
         Suit,
         outcomeOfProposedActionKind,
         readOutcomeOfProposedAction;
-import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_logbook_client/is_logbook_client.dart';
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 
@@ -38,11 +37,13 @@ Future<void> main() async {
   final readSocket = _setting('LOGBOOK_READ_SOCKET');
   final writeSocket = _setting('LOGBOOK_WRITE_SOCKET');
   final poolSize = _count('POOL_SIZE');
-  final teamLoginLimit = _count('TEAM_LOGIN_LIMIT');
-  final teamLogin =
-      ModelSignInName.parse(_setting('TEAM_LOGIN')) ??
+  final loopLimits =
+      LoopLimitPerModelSignIn.parse(_setting('LOOP_LIMIT_PER_MODEL_SIGN_IN')) ??
       (() {
-        stderr.writeln('loop_launcher: TEAM_LOGIN is not a sign-in name');
+        stderr.writeln(
+          'loop_launcher: LOOP_LIMIT_PER_MODEL_SIGN_IN is not '
+          'sign-in:count pairs, each sign-in once',
+        );
         exit(badConfig);
       })();
 
@@ -97,8 +98,7 @@ Future<void> main() async {
     pools: pools,
     router: router,
     deliver: feeds.deliver,
-    teamLogin: teamLogin,
-    teamLoginLimit: teamLoginLimit,
+    loopLimits: loopLimits,
     machine: SystemdUnits(),
     say: (line) => stdout.writeln(line),
   );
