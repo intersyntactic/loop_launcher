@@ -3,12 +3,12 @@
 Launches each journey path's agent loop. It is a core service with an OS
 user of its own, `loop-launcher`, and it holds the model sign-ins. The docking
 station, which parses bytes strangers sent, does not: a process that holds
-secrets never parses strangers' bytes, and the record is the only channel
+secrets never parses strangers' bytes, and the logbook is the only channel
 between the two.
 
 ## What it does
 
-It subscribes to every entry in the record from its start (every entry so
+It subscribes to every entry in the logbook from its start (every entry so
 far, then each new one as it is recorded). It reads the docking station's
 `admitted` entries that start a journey path and its `ended` entries, and
 its own `assigned` entries. For each path started, it:
@@ -28,15 +28,15 @@ its own `assigned` entries. For each path started, it:
 It tells the airlock nothing (Nick, 16 Nov: "loop_launcher shouldn't be
 using the airlock to record, it should just record itself"). The airlock
 reads each path's rules from `admitted` and its users from `assigned`, like
-every other service, and the journal's check on who writes a path's entries
+every other service, and the logbook's check on who writes a path's entries
 is the only check on who proposed, so no token is handed out.
 
 Every other entry goes to the path whose loop it is for, and to no other:
 an entry on the path's chain, which starts at its `assigned` entry and runs
 through each entry's `previous`, or an airlock outcome answering a proposal
 on that chain. A loop is handed its path's entries so far when it connects,
-then each new one. The journal can't tell which path an entry is about, so
-a loop never reads the record itself, and can't read another conversation.
+then each new one. The logbook can't tell which path an entry is about, so
+a loop never reads the logbook itself, and can't read another conversation.
 
 After a restart of loop_launcher, every live path goes through the same
 steps, skipping what's already done: a loop still running is left running.
@@ -58,8 +58,8 @@ recorded once, as a `waiting-to-start` entry on a chain of its own:
 
 Its `assigned` entry, written when there is room, ends the wait (Nick,
 17 Nov), so a path with users never waits. Each journey's `ended` makes
-room, and the waiting paths are brought up in the record's order, oldest
-first. After a restart, who is waiting is read from the record, and not
+room, and the waiting paths are brought up in the logbook's order, oldest
+first. After a restart, who is waiting is read from the logbook, and not
 recorded again. Why a path waits goes to the operator's log only. What its
 travellers are told, and who tells them, is decided elsewhere.
 
@@ -69,11 +69,11 @@ travellers are told, and who tells them, is decided elsewhere.
      "suit": "suit-<n>"}
 
 Kind `assigned`, sent only by `loop-launcher`. It roots the path's chain
-(Nick, 16 Nov: "amend"): the journal takes the chain's later entries only
+(Nick, 16 Nov: "amend"): the logbook takes the chain's later entries only
 from the loop user it names, by the kernel's word on who is on the socket,
 until `ended`, and refuses a second `assigned` for the path. The loop is
 given its hash, and its first turn names it as its previous. With it, the
-owner of a file, read alongside the record, still says which journey path
+owner of a file, read alongside the logbook, still says which journey path
 wrote it after a pool user is handed out again.
 
 ## Not here yet
