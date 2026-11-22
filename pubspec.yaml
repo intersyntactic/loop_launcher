@@ -12,7 +12,7 @@ environment:
 
 dependencies:
   checked_json: ^0.2.1
-  is_admission_vocabulary: ^0.1.0
+  is_admission_vocabulary: ^0.2.0
   is_airlock_api: ^0.13.0
   is_effects: ^0.12.0
   is_flight_rules: ^0.3.0
