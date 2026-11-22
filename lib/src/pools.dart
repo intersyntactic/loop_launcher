@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
-import 'package:is_logbook/is_logbook.dart' show ObjectId;
+import 'package:is_logbook_client/is_logbook_client.dart' show ObjectId;
 import 'package:is_shapes/is_shapes.dart' show MissionId, TrajectoryId;
 
 import 'users_assigned_to_trajectory.dart';
