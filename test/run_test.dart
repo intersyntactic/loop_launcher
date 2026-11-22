@@ -9,10 +9,8 @@ import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
 import 'package:is_admission_vocabulary/is_admission_vocabulary.dart'
     show DecisionEntryKind, MissionEnded, encodeDecision;
 import 'package:is_flight_rules/is_flight_rules.dart' show ProgramsNetwork;
-import 'package:is_logbook/is_logbook.dart' show ObjectId;
-import 'package:is_logbook/service.dart' show Kind;
 import 'package:is_logbook_client/is_logbook_client.dart'
-    show CaughtUp, Entry, Subscribed;
+    show CaughtUp, Entry, Kind, ObjectId, Subscribed;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 import 'package:is_shapes/is_shapes.dart'
     show DecidedBy, MissionId, TrajectoryId;

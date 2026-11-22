@@ -19,10 +19,8 @@ import 'package:is_admission_vocabulary/is_admission_vocabulary.dart'
 import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_flight_rules/is_flight_rules.dart'
     show FlightRules, WhatMayLeaveThisMachine;
-import 'package:is_logbook/is_logbook.dart' show ObjectId;
-import 'package:is_logbook/service.dart' show Kind;
 import 'package:is_logbook_client/is_logbook_client.dart'
-    show CaughtUp, Entry, Subscribed;
+    show CaughtUp, Entry, Kind, ObjectId, Subscribed;
 import 'package:is_shapes/is_shapes.dart' show MissionId, TrajectoryId;
 
 import 'loop_limit_per_model_sign_in.dart';

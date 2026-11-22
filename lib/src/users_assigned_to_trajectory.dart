@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
-import 'package:is_logbook/service.dart' show Kind;
+import 'package:is_logbook_client/is_logbook_client.dart' show Kind;
 import 'package:is_shapes/is_shapes.dart' show MissionId, TrajectoryId;
 
 /// The entry that hands [trajectory], in [mission], its [loopUser] and

@@ -1,8 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:is_logbook/is_logbook.dart' show ObjectId;
-import 'package:is_logbook/service.dart' show Kind;
-import 'package:is_logbook_client/is_logbook_client.dart' show Entry;
+import 'package:is_logbook_client/is_logbook_client.dart'
+    show Entry, Kind, ObjectId;
 import 'package:is_shapes/is_shapes.dart' show TrajectoryId;
 
 /// Sorts the logbook's entries by trajectory, so each loop is handed its own
