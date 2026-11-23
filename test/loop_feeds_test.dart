@@ -6,7 +6,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser;
-import 'package:is_admission_vocabulary/is_admission_vocabulary.dart'
+import 'package:is_docking_station_api/is_docking_station_api.dart'
     show DecisionEntryKind;
 import 'package:is_logbook_client/is_logbook_client.dart';
 import 'package:is_loop_launcher/is_loop_launcher.dart';

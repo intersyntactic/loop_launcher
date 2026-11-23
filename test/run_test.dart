@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
-import 'package:is_admission_vocabulary/is_admission_vocabulary.dart'
+import 'package:is_docking_station_api/is_docking_station_api.dart'
     show
         DecisionEntryKind,
         MissionEnded,
