@@ -80,29 +80,25 @@ void main() {
     expect(router.route(frame(returned, null, 'a plain line')), isNull);
   });
 
-  test('the raw event an admission names comes just before it, to that '
-      'trajectory only', () {
+  test('an admission goes to the trajectory it started or was placed on, '
+      'and no other', () {
     final c = TrajectoryId.parse('c3' * 32)!;
-    final raw = frame(Kind.parse('teams-event')!, null, 'teams message');
     final admission = frame(turn, null, 'admitted');
-    expect(router.route(raw), isNull);
-    router.started(c, admission, raw.id);
-    expect(router.history(c), [raw, admission]);
+    router.started(c, admission);
+    expect(router.history(c), [admission]);
 
-    final rawB = frame(Kind.parse('teams-event')!, null, 'second message');
     final placedB = frame(turn, null, 'placed on b');
-    router.route(rawB);
-    expect(router.placed(b, placedB, rawB.id), [rawB, placedB]);
-    expect(router.history(b), [rootB, rawB, placedB]);
+    expect(router.placed(b, placedB), isTrue);
+    expect(router.history(b), [rootB, placedB]);
     expect(router.history(a), [rootA]);
   });
 
-  test('an event decided elsewhere is not handed to a later admission', () {
-    final raw = frame(Kind.parse('teams-event')!, null, 'not admitted');
-    router
-      ..route(raw)
-      ..decided(raw.id);
-    expect(router.placed(a, frame(turn, null, 'x'), raw.id), hasLength(1));
+  test('a relayed event goes to no trajectory', () {
+    final raw = frame(Kind.parse('teams-event')!, null, 'teams message');
+    expect(router.route(raw), isNull);
+    router.started(TrajectoryId.parse('c3' * 32)!, frame(turn, null, 'x'));
+    expect(router.history(a), [rootA]);
+    expect(router.history(b), [rootB]);
   });
 
   test('an ended trajectory is handed nothing more', () {
