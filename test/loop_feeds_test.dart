@@ -41,7 +41,6 @@ void main() {
     await Directory('${dir.path}/loop-1').create();
     await Directory('${dir.path}/loop-2').create();
     router = TrajectoryRouter(
-      eventKinds: {Kind.parse('event')!},
       outcomeKinds: {returned},
       proposalOf: (_, body) => ObjectId.parse(utf8.decode(body)),
     );
@@ -99,7 +98,7 @@ void main() {
   test('a loop subscribed to turn, admission and event kinds gets each raw '
       'event just before its admission, replayed and live', () async {
     final admittedKind = DecisionEntryKind.eventAdmittedToMission;
-    final eventKind = Kind.parse('event')!;
+    final eventKind = Kind.parse('teams-event')!;
     final raw = entry(eventKind, null, 'first message');
     final admission = entry(admittedKind, null, raw.id.hex);
     final rootA = entry(UsersAssignedToTrajectory.kind, null, 'a');
@@ -110,9 +109,8 @@ void main() {
     final firstTurn = entry(turn, rootA.id, 'reply');
     router.route(firstTurn);
 
-    final feed = LogbookReader(
-      feeds.pathOf(loop1),
-    ).subscribe(kinds: {turn, admittedKind, eventKind});
+    final feed = LogbookReader(feeds.pathOf(loop1))
+        .subscribe(kinds: {turn, admittedKind, eventKind});
     final got = StreamIterator(feed);
     final seen = <ObjectId>[];
     while (await got.moveNext() && got.current is Entry) {

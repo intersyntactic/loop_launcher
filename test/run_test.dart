@@ -85,7 +85,7 @@ void main() {
     Uint8List.fromList(
       utf8.encode(
         '{"event":"${n.toRadixString(16).padLeft(64, '0')}","by":"rules",'
-        '"reading":{"case":"message-said",'
+        '"translatedEvent":{"case":"message-said",'
         '"addressInExternalSystem":"teams:19:x;messageid=$n",'
         '"containingAddress":"teams:19:x",'
         '"key":"message:$n","node":{"shape":"UserSaid",'
@@ -115,10 +115,12 @@ void main() {
     Uint8List.fromList(
       utf8.encode(
         '{"event":"${(0xc000 + n).toRadixString(16).padLeft(64, '0')}",'
-        '"by":"rules","reading":{"case":"person-asked-to-close-trajectory",'
+        '"by":"rules","translatedEvent":'
+        '{"case":"person-asked-to-close-trajectory",'
         '"addressInExternalSystem":"teams:19:x;messageid=$n",'
         '"containingAddress":"teams:19:x","key":"invoke:$n",'
-        '"from":"teams:t/p","message":"19:x;messageid=$n|1"},'
+        '"from":"teams:t/p","message":"19:x;messageid=$n|1",'
+        '"trajectory":"${TrajectoryId.of(admitted.recorded).hex}"},'
         '"trajectory":"${TrajectoryId.of(admitted.recorded).hex}",'
         '"mission":"${MissionId.of(admitted.recorded).hex}"}',
       ),
@@ -160,7 +162,6 @@ void main() {
     final machine = _Machine();
     final delivered = <(TrajectoryId, Entry)>[];
     final router = TrajectoryRouter(
-      eventKinds: {Kind.parse('event')!},
       outcomeKinds: {returned},
       proposalOf: (_, body) => ObjectId.parse(utf8.decode(body)),
     );

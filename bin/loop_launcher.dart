@@ -59,7 +59,6 @@ Future<void> main() async {
     suits: [for (var n = 1; n <= poolSize; n++) Suit.parse('suit-$n')!],
   );
   final router = TrajectoryRouter(
-    eventKinds: {Kind.parse('event')!},
     outcomeKinds: {Kind.parse(outcomeOfProposedActionKind)!},
     // An action with no proposal is recorded under the same kind as a plain
     // line; it answers no loop. The proposal's EntryId and the logbook's id
