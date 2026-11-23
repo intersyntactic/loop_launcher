@@ -7,7 +7,12 @@ import 'dart:typed_data';
 
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
 import 'package:is_admission_vocabulary/is_admission_vocabulary.dart'
-    show DecisionEntryKind, MissionEnded, encodeDecision;
+    show
+        DecisionEntryKind,
+        MissionEnded,
+        OperatorName,
+        TrajectoryClosedByOperator,
+        encodeDecision;
 import 'package:is_flight_rules/is_flight_rules.dart' show ProgramsNetwork;
 import 'package:is_logbook_client/is_logbook_client.dart'
     show CaughtUp, Entry, Kind, ObjectId, Subscribed;
@@ -102,6 +107,19 @@ void main() {
   TrajectoryId trajectoryOf(Entry admitted) =>
       TrajectoryId.of(admitted.recorded);
   MissionId missionOf(Entry admitted) => MissionId.of(admitted.recorded);
+
+  // An operator's close of [admitted]'s trajectory, which names no event.
+  Entry closedByOperator(Entry admitted) {
+    final (kind, body) = encodeDecision(
+      TrajectoryClosedByOperator(
+        trajectory: trajectoryOf(admitted),
+        mission: missionOf(admitted),
+        operator: OperatorName.parse('nick')!,
+        reason: 'stuck in a loop',
+      ),
+    );
+    return entry(kind, null, body);
+  }
 
   // A logbook that takes what loop_launcher sends and hands it back on the
   // subscription.
@@ -379,6 +397,42 @@ void main() {
     );
     expect(l.router.history(trajectoryOf(p1)), isEmpty);
     expect(l.router.history(trajectoryOf(p2)), isNotEmpty);
+
+    await l.logbook.close();
+    await l.run;
+  });
+
+  test("an operator's close stops the loop and frees its users as a "
+      "person's does", () async {
+    final l = launch(users: 1, loopLimits: 'team:4');
+    final [p1, p2] = [
+      admitted(1, ['team']),
+      admitted(2, ['team']),
+    ];
+    l.logbook
+      ..add(const CaughtUp(null))
+      ..add(p1)
+      ..add(p2);
+    await pumpEventQueue();
+    expect(kindsOf(l.sent), [
+      'users-assigned-to-trajectory',
+      'waiting-to-start',
+    ]);
+
+    l.logbook.add(closedByOperator(p1));
+    await pumpEventQueue();
+    expect(l.machine.calls.skip(3), [
+      'stop loop-1',
+      'close suit-1',
+      'wipe suit-1',
+      'open suit-1 noNetworkOfTheirOwn',
+      'start loop-1',
+    ]);
+    expect(
+      UsersAssignedToTrajectory.decode(l.sent[2].body)!.trajectory,
+      trajectoryOf(p2),
+    );
+    expect(l.router.history(trajectoryOf(p1)), isEmpty);
 
     await l.logbook.close();
     await l.run;

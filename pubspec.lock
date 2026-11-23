@@ -157,10 +157,10 @@ packages:
     dependency: "direct main"
     description:
       name: is_admission_vocabulary
-      sha256: d5f4943ecbec5adde90543e375e1111aa93f3bcd9d6e987af2a80db922d81991
+      sha256: d91f8246cf4a71512e24867a27a78495787db7d498e848e900e02fa8f1d420a7
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0"
+    version: "0.3.0"
   is_airlock_api:
     dependency: "direct main"
     description:
