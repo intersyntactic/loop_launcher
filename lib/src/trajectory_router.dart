@@ -1,34 +1,28 @@
 import 'dart:typed_data';
 
-import 'package:is_docking_station_api/is_docking_station_api.dart'
-    show RelayedEventSource;
 import 'package:is_logbook_client/is_logbook_client.dart'
     show Entry, Kind, ObjectId;
 import 'package:is_shapes/is_shapes.dart' show TrajectoryId;
 
 /// Sorts the logbook's entries by trajectory, so each loop is handed its own
-/// and no other's: each admission that started it or was placed on it, just
-/// after the raw event that admission names, its root, the entries on its
-/// chain, and the airlock's outcomes for its proposals.
+/// and no other's: each admission that started it or was placed on it, its
+/// root, the entries on its chain, and the airlock's outcomes for its
+/// proposals. A relayed event, the bytes a stranger sent, is handed to no
+/// loop: its admission carries what was made of it.
 final class TrajectoryRouter {
-  /// A relayed event, of a `<source>-event` kind, is held until an admission
-  /// names it. [proposalOf] names the proposal an outcome answers; null when
-  /// the entry answers no proposal.
+  /// [proposalOf] names the proposal an outcome answers; null when the entry
+  /// answers no proposal.
   TrajectoryRouter({required this._outcomeKinds, required this._proposalOf});
 
   final Set<Kind> _outcomeKinds;
   final ObjectId? Function(Kind kind, Uint8List body) _proposalOf;
 
-  final _events = <ObjectId, Entry>{};
   final _trajectoryOf = <ObjectId, TrajectoryId>{};
   final _history = <TrajectoryId, List<Entry>>{};
 
-  /// [admitted], which admits [event], started [trajectory].
-  void started(TrajectoryId trajectory, Entry admitted, ObjectId event) {
-    _history.putIfAbsent(trajectory, () => []).addAll([
-      ?_events.remove(event),
-      admitted,
-    ]);
+  /// [admitted] started [trajectory].
+  void started(TrajectoryId trajectory, Entry admitted) {
+    _history.putIfAbsent(trajectory, () => []).add(admitted);
   }
 
   /// [trajectory]'s chain starts at [root], its users-assigned entry.
@@ -37,26 +31,16 @@ final class TrajectoryRouter {
     _history.putIfAbsent(trajectory, () => []).add(root);
   }
 
-  /// [admitted], which admits [event], was placed on [trajectory]. The
-  /// entries added to its history, in order; null if it isn't live.
-  List<Entry>? placed(TrajectoryId trajectory, Entry admitted, ObjectId event) {
-    final added = [?_events.remove(event), admitted];
+  /// [admitted] was placed on [trajectory]; false if it isn't live.
+  bool placed(TrajectoryId trajectory, Entry admitted) {
     final history = _history[trajectory];
-    if (history == null) return null;
-    history.addAll(added);
-    return added;
+    if (history == null) return false;
+    history.add(admitted);
+    return true;
   }
 
-  /// [event] was decided without starting or joining a trajectory.
-  void decided(ObjectId event) => _events.remove(event);
-
-  /// The trajectory [entry] is for, kept in its history; null if none. A
-  /// raw event is held for the admission that names it, and goes nowhere yet.
+  /// The trajectory [entry] is for, kept in its history; null if none.
   TrajectoryId? route(Entry entry) {
-    if (RelayedEventSource.ofKind(entry.kind) != null) {
-      _events[entry.id] = entry;
-      return null;
-    }
     final isOutcome = _outcomeKinds.contains(entry.kind);
     final trajectory = isOutcome
         ? switch (_proposalOf(entry.kind, entry.body)) {

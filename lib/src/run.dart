@@ -203,7 +203,6 @@ Future<void> runLoopLauncher({
           case EventAdmittedToMission(
             placement: StartsTrajectory(mission: final placement),
             :final rules,
-            :final event,
           ):
             final trajectory = TrajectoryId.of(bytes);
             final mission = switch (placement) {
@@ -218,25 +217,22 @@ Future<void> runLoopLauncher({
                   )),
             ).whatMayLeaveThisMachine;
             started[trajectory] = (mission, typed);
-            router.started(trajectory, item, event);
+            router.started(trajectory, item);
             if (caughtUp) await bringUp(trajectory, mission, typed);
           case EventAdmittedToMission(
             placement: OnTrajectory(:final trajectory),
-            :final event,
           ):
-            if (router.placed(trajectory, item, event) case final added?
-                when caughtUp) {
-              for (final entry in added) {
-                deliver(trajectory, entry);
-              }
+            if (router.placed(trajectory, item) && caughtUp) {
+              deliver(trajectory, item);
             }
           case MissionEnded(:final mission):
             await release((_, m) => m == mission, stop: caughtUp);
           case TrajectoryClosed(:final trajectory):
             await release((t, _) => t == trajectory, stop: caughtUp);
-          case EventAdmittedToMission(placement: IntoMission(), :final event):
-          case EventNotAdmittedToMission(:final event):
-            router.decided(event);
+          // Neither starts a trajectory nor joins one, so no loop is handed it.
+          case EventAdmittedToMission(placement: IntoMission()):
+          case EventNotAdmittedToMission():
+            break;
         }
       case CaughtUp():
         caughtUp = true;

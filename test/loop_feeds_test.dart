@@ -95,16 +95,16 @@ void main() {
     await got.cancel();
   });
 
-  test('a loop subscribed to turn, admission and event kinds gets each raw '
-      'event just before its admission, replayed and live', () async {
+  test('a loop gets its admissions, replayed and live, and never a relayed '
+      'event, even subscribed to its kind', () async {
     final admittedKind = DecisionEntryKind.eventAdmittedToMission;
     final eventKind = Kind.parse('teams-event')!;
     final raw = entry(eventKind, null, 'first message');
     final admission = entry(admittedKind, null, raw.id.hex);
     final rootA = entry(UsersAssignedToTrajectory.kind, null, 'a');
+    router.route(raw);
     router
-      ..route(raw)
-      ..started(a, admission, raw.id)
+      ..started(a, admission)
       ..rooted(a, rootA);
     final firstTurn = entry(turn, rootA.id, 'reply');
     router.route(firstTurn);
@@ -116,20 +116,17 @@ void main() {
     while (await got.moveNext() && got.current is Entry) {
       seen.add((got.current as Entry).id);
     }
-    expect(seen, [raw.id, admission.id, firstTurn.id]);
+    expect(seen, [admission.id, firstTurn.id]);
 
     final rawLive = entry(eventKind, null, 'second message');
     final placedLive = entry(admittedKind, null, rawLive.id.hex);
-    router.route(rawLive);
-    for (final e in router.placed(a, placedLive, rawLive.id)!) {
-      feeds.deliver(a, e);
-    }
-    for (final want in [rawLive, placedLive]) {
-      expect(await got.moveNext(), isTrue);
-      final e = got.current as Entry;
-      expect(e.id, want.id);
-      expect(e.recorded, want.recorded);
-    }
+    expect(router.route(rawLive), isNull);
+    expect(router.placed(a, placedLive), isTrue);
+    feeds.deliver(a, placedLive);
+    expect(await got.moveNext(), isTrue);
+    final e = got.current as Entry;
+    expect(e.id, placedLive.id);
+    expect(e.recorded, placedLive.recorded);
     await got.cancel();
   });
 
