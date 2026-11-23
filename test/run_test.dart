@@ -13,7 +13,10 @@ import 'package:is_docking_station_api/is_docking_station_api.dart'
         OperatorName,
         TrajectoryClosedByOperator,
         encodeDecision;
-import 'package:is_flight_rules/is_flight_rules.dart' show ProgramsNetwork;
+import 'package:is_effects/is_effects.dart'
+    show ModelAndSignIn, ModelName, ModelSignInName;
+import 'package:is_flight_rules/is_flight_rules.dart'
+    show FlightRules, ProgramsNetwork, WhatMayLeaveThisMachine;
 import 'package:is_logbook_client/is_logbook_client.dart'
     show CaughtUp, Entry, Kind, ObjectId, Subscribed;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
@@ -51,9 +54,31 @@ void main() {
   Entry said(ObjectId previous, String text) =>
       entry(turn, previous, Uint8List.fromList(utf8.encode(text)));
 
+  // Rules whose model calls may go out as [signIns], starting on the first,
+  // with no web grants and no programs.
+  String rulesJson(List<String> signIns) {
+    final names = [for (final s in signIns) ModelSignInName.parse(s)!];
+    return jsonEncode(
+      FlightRules.of(
+        whatMayLeaveThisMachine: WhatMayLeaveThisMachine(
+          modelSignInsCallsMayGoOutAs: names,
+          fetchesMayReach: const [],
+          webRequestsMayReach: const [],
+          programsNetwork: ProgramsNetwork.noNetworkOfTheirOwn,
+        ),
+        startingModel: ModelAndSignIn(
+          signIn: names.first,
+          model: ModelName.parse('m')!,
+        ),
+        programsItMayRun: const [],
+        programsItNeeds: const [],
+      )!.toJson(),
+    );
+  }
+
   // An admission that starts a mission and its first trajectory, under
-  // rules whose model calls may go out as [signIns], starting on the first.
-  // [n] keeps each one's bytes, and so its ids, its own.
+  // [rulesJson] for [signIns]. [n] keeps each one's bytes, and so its ids,
+  // its own.
   Entry admitted(int n, List<String> signIns) => entry(
     DecisionEntryKind.eventAdmittedToMission,
     null,
@@ -66,11 +91,7 @@ void main() {
         '"key":"message:$n","node":{"shape":"UserSaid",'
         '"author":"teams:t/p","source":"19:x;messageid=$n|1","text":"hi"}},'
         '"startsTrajectory":true,"startsMission":true,'
-        '"rules":{"whatMayLeaveThisMachine":'
-        '{"modelSignInsCallsMayGoOutAs":${jsonEncode(signIns)},'
-        '"sitesTheWebDriverMayReach":[],'
-        '"programsNetwork":"noNetworkOfTheirOwn"},'
-        '"startingModel":{"signIn":"${signIns.first}","model":"m"}},'
+        '"rules":${rulesJson(signIns)},'
         '"startsTurn":true}',
       ),
     ),
