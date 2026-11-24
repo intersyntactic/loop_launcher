@@ -245,6 +245,34 @@ void main() {
     await l.run;
   });
 
+  test('after a restart, a loop whose trajectory closed while loop_launcher '
+      'was down is stopped once caught up, before its user is handed out '
+      'again', () async {
+    final l = launch(users: 1, loopLimits: 'team:4');
+    final p1 = admitted(1, ['team']);
+    final p2 = admitted(2, ['team']);
+    l.logbook
+      ..add(p1)
+      ..add(assigned(trajectoryOf(p1), missionOf(p1), 1))
+      ..add(closed(p1, 1))
+      ..add(p2)
+      ..add(const CaughtUp(null));
+    await pumpEventQueue();
+    expect(l.machine.calls.take(2), ['stop loop-1', 'close suit-1']);
+    expect(l.machine.calls.skip(2), [
+      'wipe suit-1',
+      'open suit-1 noNetworkOfTheirOwn',
+      'start loop-1',
+    ]);
+    expect(
+      UsersAssignedToTrajectory.decode(l.sent.single.body)!.trajectory,
+      trajectoryOf(p2),
+    );
+
+    await l.logbook.close();
+    await l.run;
+  });
+
   test('a Team-login trajectory past the limit, or one finding no user '
       'free, waits with no users, recorded once, until a mission ends; '
       'the oldest waiting starts first', () async {
@@ -296,7 +324,7 @@ void main() {
       UsersAssignedToTrajectory.decode(l.sent[5].body)!.trajectory,
       trajectoryOf(p3),
     );
-    expect(l.machine.calls.skip(9), [
+    expect(l.machine.calls.skip(15), [
       'stop loop-1',
       'close suit-1',
       'wipe suit-1',
@@ -406,7 +434,7 @@ void main() {
 
     l.logbook.add(closed(p1, 1));
     await pumpEventQueue();
-    expect(l.machine.calls.skip(6), [
+    expect(l.machine.calls.skip(10), [
       'stop loop-1',
       'close suit-1',
       'wipe suit-1',
@@ -443,7 +471,7 @@ void main() {
 
     l.logbook.add(closedByOperator(p1));
     await pumpEventQueue();
-    expect(l.machine.calls.skip(3), [
+    expect(l.machine.calls.skip(5), [
       'stop loop-1',
       'close suit-1',
       'wipe suit-1',

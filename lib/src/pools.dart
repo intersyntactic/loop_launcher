@@ -23,6 +23,10 @@ final class Pools {
 
   Iterable<(UsersAssignedToTrajectory, ObjectId)> get live => _held.values;
 
+  /// The loop users and suits no trajectory holds.
+  ({List<LoopUser> loopUsers, List<Suit> suits}) get unheld =>
+      (loopUsers: [..._freeLoops], suits: [..._freeSuits]);
+
   /// The trajectory [user] runs, if any.
   TrajectoryId? heldBy(LoopUser user) {
     for (final (users, _) in _held.values) {
