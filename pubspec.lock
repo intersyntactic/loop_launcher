@@ -197,18 +197,18 @@ packages:
     dependency: "direct main"
     description:
       name: is_effects
-      sha256: "95b051e592edb4e04241e89be3ac1500c0abaf58fdec8e64f40a2cbe7a7ebfc7"
+      sha256: "0b322e4efe7313479b09121b44c8d49dbf3f0794a9a46da41efcd8cefa937ab7"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.2"
+    version: "0.14.3"
   is_flight_rules:
     dependency: "direct main"
     description:
       name: is_flight_rules
-      sha256: ccca6da45d07ee5689f19707abfe19c1e534fb6636b097a58aa3527d65ee9799
+      sha256: "45e0d210466b8d435f42f53077123cf4553a95a8acfef8ac783e6ebbddd47cab"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.6.0"
   is_logbook_client:
     dependency: "direct main"
     description:
@@ -241,6 +241,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
+  is_sign_in_vocabulary:
+    dependency: transitive
+    description:
+      name: is_sign_in_vocabulary
+      sha256: dfffa15f57f7fb076e89aca0d27e33def3b2786efa730ee0c6cbca5473aefb15
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
+  is_tools_api:
+    dependency: transitive
+    description:
+      name: is_tools_api
+      sha256: "9d330a9c80eae3b88d71322d0981d0d0c6483a2fcdd1d5f4f6452fba2dc7daf9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0"
   is_web_address_vocabulary:
     dependency: transitive
     description:

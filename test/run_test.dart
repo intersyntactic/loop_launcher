@@ -55,7 +55,7 @@ void main() {
       entry(turn, previous, Uint8List.fromList(utf8.encode(text)));
 
   // Rules whose model calls may go out as [signIns], starting on the first,
-  // with no web grants and no programs.
+  // with no web grants, no programs and no given tools.
   String rulesJson(List<String> signIns) {
     final names = [for (final s in signIns) ModelSignInName.parse(s)!];
     return jsonEncode(
@@ -72,6 +72,7 @@ void main() {
         ),
         programsItMayRun: const [],
         programsItNeeds: const [],
+        givenTools: const [],
       )!.toJson(),
     );
   }
