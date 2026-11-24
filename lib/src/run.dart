@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math' show min;
 import 'dart:typed_data';
 
 import 'package:is_airlock_api/is_airlock_api.dart'
@@ -45,6 +47,10 @@ final waitingToStartKind = Kind.parse(WaitingToStart.kind)!;
 /// mission's end stops its loops, and a trajectory's close stops its own;
 /// either frees the users and brings up whoever waits, oldest first.
 ///
+/// A step the machine refuses is tried again, through [schedule], after a
+/// wait that doubles from 2s to a minute, for as long as the trajectory is
+/// live. A try waits its turn behind the logbook's entries.
+///
 /// Entries on a live trajectory's chain are kept in [router]; once caught
 /// up, each is also handed to [deliver].
 Future<void> runLoopLauncher({
@@ -61,9 +67,12 @@ Future<void> runLoopLauncher({
   required LoopLimitPerModelSignIn loopLimits,
   required StartsAndStopsTrajectoryProcesses machine,
   required void Function(String line) say,
+  void Function(Duration after, void Function() then) schedule = _later,
 }) async {
   final started = <TrajectoryId, (MissionId, WhatMayLeaveThisMachine)>{};
   final waiting = <TrajectoryId>{};
+  // The logbook's items and the tries again, taken one at a time.
+  late final StreamController<Future<void> Function()> lane;
 
   int holdingUsers(ModelSignInName signIn) => started.entries
       .where((s) => s.value.$2.allowsModelCall(signIn))
@@ -80,7 +89,8 @@ Future<void> runLoopLauncher({
     );
   }
 
-  Future<void> bringUp(
+  /// False when the machine refused a step, so trying again may help.
+  Future<bool> bringUp(
     TrajectoryId trajectory,
     MissionId mission,
     WhatMayLeaveThisMachine rules,
@@ -90,18 +100,23 @@ Future<void> runLoopLauncher({
       for (final signIn in rules.modelSignInsCallsMayGoOutAs) {
         switch (loopLimits.of(signIn)) {
           case null:
-            return wait(trajectory, 'no loop limit is set for $signIn');
+            await wait(trajectory, 'no loop limit is set for $signIn');
+            return true;
           case final limit when holdingUsers(signIn) >= limit:
-            return wait(trajectory, '$signIn is at its limit of $limit');
+            await wait(trajectory, '$signIn is at its limit of $limit');
+            return true;
         }
       }
       final users = pools.freeUsers(trajectory, mission);
-      if (users == null) return wait(trajectory, 'no loop user or suit free');
+      if (users == null) {
+        await wait(trajectory, 'no loop user or suit free');
+        return true;
+      }
       try {
         await machine.wipeSuit(users.suit);
       } on LaunchFailed catch (e) {
         say('${users.suit}: not handed out: ${e.why}');
-        return;
+        return false;
       }
       final root = await send(
         UsersAssignedToTrajectory.kind,
@@ -116,13 +131,46 @@ Future<void> runLoopLauncher({
       await machine.openSuitPrograms(users.suit, rules.programsNetwork);
     } on LaunchFailed catch (e) {
       say('${trajectory.hex}: its programs cannot run: ${e.why}');
-      return;
+      return false;
     }
     try {
       await machine.startTrajectoryLoop(users.loopUser);
     } on LaunchFailed catch (e) {
       say('${trajectory.hex}: its loop did not start: ${e.why}');
+      return false;
     }
+    return true;
+  }
+
+  final tries = <TrajectoryId, int>{};
+  final tryPending = <TrajectoryId>{};
+
+  // Brings [trajectory] up again once the wait is over and the lane reaches
+  // it, unless a try is already pending or the trajectory has gone.
+  void retry(TrajectoryId trajectory) {
+    if (!tryPending.add(trajectory)) return;
+    final tried = tries[trajectory] = (tries[trajectory] ?? 0) + 1;
+    final after = Duration(seconds: min(1 << min(tried, 6), 60));
+    say('${trajectory.hex}: trying again in ${after.inSeconds}s');
+    schedule(after, () {
+      if (lane.isClosed) return;
+      lane.add(() async {
+        tryPending.remove(trajectory);
+        final done = switch (started[trajectory]) {
+          (final mission, final rules) => await bringUp(
+            trajectory,
+            mission,
+            rules,
+          ),
+          null => true,
+        };
+        if (done) {
+          tries.remove(trajectory);
+        } else {
+          retry(trajectory);
+        }
+      });
+    });
   }
 
   /// Stops and frees every trajectory [ending] picks, forgets it, and once
@@ -166,14 +214,15 @@ Future<void> runLoopLauncher({
     if (!stop) return;
     for (final MapEntry(key: trajectory, value: (mission, rules))
         in started.entries.toList()) {
-      if (pools.of(trajectory) == null) {
-        await bringUp(trajectory, mission, rules);
+      if (pools.of(trajectory) == null &&
+          !await bringUp(trajectory, mission, rules)) {
+        retry(trajectory);
       }
     }
   }
 
   var caughtUp = false;
-  await for (final item in subscribe()) {
+  Future<void> take(Subscribed item) async {
     switch (item) {
       case Entry(:final kind, :final id, :final body)
           when kind == UsersAssignedToTrajectory.kind:
@@ -218,7 +267,9 @@ Future<void> runLoopLauncher({
             ).whatMayLeaveThisMachine;
             started[trajectory] = (mission, typed);
             router.started(trajectory, item);
-            if (caughtUp) await bringUp(trajectory, mission, typed);
+            if (caughtUp && !await bringUp(trajectory, mission, typed)) {
+              retry(trajectory);
+            }
           case EventAdmittedToMission(
             placement: OnTrajectory(:final trajectory),
           ):
@@ -255,8 +306,25 @@ Future<void> runLoopLauncher({
         }
         for (final MapEntry(key: trajectory, value: (mission, rules))
             in started.entries.toList()) {
-          await bringUp(trajectory, mission, rules);
+          if (!await bringUp(trajectory, mission, rules)) retry(trajectory);
         }
     }
   }
+
+  late final StreamSubscription<Subscribed> logbook;
+  lane = StreamController(
+    onListen: () => logbook = subscribe().listen(
+      (item) => lane.add(() => take(item)),
+      onError: lane.addError,
+      onDone: lane.close,
+    ),
+    onPause: () => logbook.pause(),
+    onResume: () => logbook.resume(),
+    onCancel: () => logbook.cancel(),
+  );
+  await for (final work in lane.stream) {
+    await work();
+  }
 }
+
+void _later(Duration after, void Function() then) => Timer(after, then);

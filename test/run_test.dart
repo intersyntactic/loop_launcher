@@ -154,6 +154,7 @@ void main() {
     _Machine machine,
     TrajectoryRouter router,
     List<(TrajectoryId, Entry)> delivered,
+    List<(Duration, void Function())> scheduled,
     Future<void> run,
   })
   launch({required int users, required String loopLimits}) {
@@ -162,6 +163,7 @@ void main() {
     final said = <String>[];
     final machine = _Machine();
     final delivered = <(TrajectoryId, Entry)>[];
+    final scheduled = <(Duration, void Function())>[];
     final router = TrajectoryRouter(
       outcomeKinds: {returned},
       proposalOf: (_, body) => ObjectId.parse(utf8.decode(body)),
@@ -185,6 +187,7 @@ void main() {
       loopLimits: LoopLimitPerModelSignIn.parse(loopLimits)!,
       machine: machine,
       say: said.add,
+      schedule: (after, then) => scheduled.add((after, then)),
     );
     return (
       logbook: logbook,
@@ -193,6 +196,7 @@ void main() {
       machine: machine,
       router: router,
       delivered: delivered,
+      scheduled: scheduled,
       run: run,
     );
   }
@@ -531,10 +535,88 @@ void main() {
     await l.logbook.close();
     await l.run;
   });
+
+  test('a loop start the machine refuses is tried again after 2s, then 4s, '
+      'until it starts, with its users handed out once', () async {
+    final l = launch(users: 1, loopLimits: 'team:4');
+    l.machine.refusedStarts = 2;
+    l.logbook
+      ..add(const CaughtUp(null))
+      ..add(admitted(1, ['team']));
+    await pumpEventQueue();
+    expect(
+      [for (final (after, _) in l.scheduled) after],
+      [const Duration(seconds: 2)],
+    );
+
+    l.scheduled.last.$2();
+    await pumpEventQueue();
+    expect(
+      [for (final (after, _) in l.scheduled) after],
+      [const Duration(seconds: 2), const Duration(seconds: 4)],
+    );
+
+    l.scheduled.last.$2();
+    await pumpEventQueue();
+    expect(l.scheduled, hasLength(2), reason: 'started, so no more tries');
+    expect(l.machine.calls, [
+      'stop loop-1',
+      'close suit-1',
+      'wipe suit-1',
+      for (var i = 0; i < 3; i++) ...[
+        'open suit-1 noNetworkOfTheirOwn',
+        'start loop-1',
+      ],
+    ]);
+    expect(kindsOf(l.sent), ['users-assigned-to-trajectory']);
+
+    await l.logbook.close();
+    await l.run;
+  });
+
+  test('a trajectory closed while its try waits is not tried', () async {
+    final l = launch(users: 1, loopLimits: 'team:4');
+    l.machine.refusedStarts = 1;
+    final p = admitted(1, ['team']);
+    l.logbook
+      ..add(const CaughtUp(null))
+      ..add(p);
+    await pumpEventQueue();
+    l.logbook.add(closed(p, 1));
+    await pumpEventQueue();
+    l.machine.calls.clear();
+
+    l.scheduled.single.$2();
+    await pumpEventQueue();
+    expect(l.machine.calls, isEmpty);
+    expect(l.scheduled, hasLength(1));
+
+    await l.logbook.close();
+    await l.run;
+  });
+
+  test('a try due after the logbook ends does nothing', () async {
+    final l = launch(users: 1, loopLimits: 'team:4');
+    l.machine.refusedStarts = 1;
+    l.logbook
+      ..add(const CaughtUp(null))
+      ..add(admitted(1, ['team']));
+    await pumpEventQueue();
+    await l.logbook.close();
+    await l.run;
+    l.machine.calls.clear();
+
+    l.scheduled.single.$2();
+    await pumpEventQueue();
+    expect(l.machine.calls, isEmpty);
+  });
 }
 
 final class _Machine implements StartsAndStopsTrajectoryProcesses {
   final calls = <String>[];
+
+  /// How many loop starts to refuse before one is done.
+  var refusedStarts = 0;
 
   @override
   Future<void> wipeSuit(Suit suit) async => calls.add('wipe $suit');
@@ -547,8 +629,13 @@ final class _Machine implements StartsAndStopsTrajectoryProcesses {
   Future<void> closeSuitPrograms(Suit suit) async => calls.add('close $suit');
 
   @override
-  Future<void> startTrajectoryLoop(LoopUser user) async =>
-      calls.add('start $user');
+  Future<void> startTrajectoryLoop(LoopUser user) async {
+    calls.add('start $user');
+    if (refusedStarts > 0) {
+      refusedStarts--;
+      throw const LaunchFailed('start request repeated too quickly');
+    }
+  }
 
   @override
   Future<void> stopTrajectoryLoop(LoopUser user) async =>
