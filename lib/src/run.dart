@@ -236,6 +236,23 @@ Future<void> runLoopLauncher({
         }
       case CaughtUp():
         caughtUp = true;
+        // A trajectory closed while loop_launcher was down was freed in the
+        // replay without its loop stopped, so nothing unheld may run on.
+        final (:loopUsers, :suits) = pools.unheld;
+        for (final user in loopUsers) {
+          try {
+            await machine.stopTrajectoryLoop(user);
+          } on LaunchFailed catch (e) {
+            say('$user: did not stop: ${e.why}');
+          }
+        }
+        for (final suit in suits) {
+          try {
+            await machine.closeSuitPrograms(suit);
+          } on LaunchFailed catch (e) {
+            say('$suit: programs did not close: ${e.why}');
+          }
+        }
         for (final MapEntry(key: trajectory, value: (mission, rules))
             in started.entries.toList()) {
           await bringUp(trajectory, mission, rules);
