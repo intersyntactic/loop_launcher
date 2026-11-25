@@ -10,7 +10,6 @@ import 'package:is_docking_station_api/is_docking_station_api.dart'
     show DecisionEntryKind;
 import 'package:is_logbook_client/is_logbook_client.dart';
 import 'package:is_loop_launcher/is_loop_launcher.dart';
-import 'package:is_shapes/is_shapes.dart' show TrajectoryId;
 import 'package:test/test.dart';
 
 void main() {
@@ -20,7 +19,7 @@ void main() {
   final loop2 = LoopUser.parse('loop-2')!;
   final a = TrajectoryId.parse('a1' * 32)!;
   final b = TrajectoryId.parse('b2' * 32)!;
-  Entry entry(Kind kind, ObjectId? previous, String body) {
+  Entry entry(Kind kind, ObjectId? previous, String body, {TrajectoryId? on}) {
     final recorded = Uint8List.fromList(
       utf8.encode('${kind.name}\n${previous?.hex ?? '-'}\n$body'),
     );
@@ -28,6 +27,7 @@ void main() {
       id: ObjectId.of(recorded),
       kind: kind,
       previous: previous,
+      trajectory: on,
       recorded: recorded,
     );
   }
@@ -60,16 +60,16 @@ void main() {
 
   test("a loop gets its own trajectory's entries, an outcome by its "
       "proposal's id, and nothing of another's; then new ones live", () async {
-    final rootA = entry(UsersAssignedToTrajectory.kind, null, 'a');
-    final rootB = entry(UsersAssignedToTrajectory.kind, null, 'b');
+    final rootA = entry(UsersAssignedToTrajectory.kind, null, 'a', on: a);
+    final rootB = entry(UsersAssignedToTrajectory.kind, null, 'b', on: b);
     router
       ..rooted(a, rootA)
       ..rooted(b, rootB);
-    final proposal = entry(turn, rootA.id, 'propose');
+    final proposal = entry(turn, rootA.id, 'propose', on: a);
     final outcome = entry(returned, null, proposal.id.hex);
     for (final e in [
       proposal,
-      entry(turn, rootB.id, 'b only'),
+      entry(turn, rootB.id, 'b only', on: b),
       // A `returned` that answers no proposal goes nowhere.
       entry(returned, null, 'not a proposal'),
       outcome,
@@ -79,19 +79,25 @@ void main() {
 
     final feed = LogbookReader(feeds.pathOf(loop1)).subscribe();
     final got = StreamIterator(feed);
-    final seen = <ObjectId>[];
+    final seen = <(ObjectId, TrajectoryId?)>[];
     while (await got.moveNext() && got.current is Entry) {
-      seen.add((got.current as Entry).id);
+      final e = got.current as Entry;
+      seen.add((e.id, e.trajectory));
     }
-    expect(seen, [rootA.id, proposal.id, outcome.id]);
+    expect(seen, [
+      (rootA.id, a),
+      (proposal.id, a),
+      (outcome.id, null),
+    ], reason: "each entry carries the logbook's stamp, or none");
     expect(got.current, isA<CaughtUp>());
 
-    final live = entry(turn, proposal.id, 'live');
+    final live = entry(turn, proposal.id, 'live', on: a);
     router.route(live);
     feeds.deliver(a, live);
-    feeds.deliver(b, entry(turn, rootB.id, 'not for a'));
+    feeds.deliver(b, entry(turn, rootB.id, 'not for a', on: b));
     expect(await got.moveNext(), isTrue);
     expect((got.current as Entry).id, live.id);
+    expect((got.current as Entry).trajectory, a);
     await got.cancel();
   });
 
@@ -101,12 +107,12 @@ void main() {
     final eventKind = Kind.parse('teams-event')!;
     final raw = entry(eventKind, null, 'first message');
     final admission = entry(admittedKind, null, raw.id.hex);
-    final rootA = entry(UsersAssignedToTrajectory.kind, null, 'a');
+    final rootA = entry(UsersAssignedToTrajectory.kind, null, 'a', on: a);
     router.route(raw);
     router
       ..started(a, admission)
       ..rooted(a, rootA);
-    final firstTurn = entry(turn, rootA.id, 'reply');
+    final firstTurn = entry(turn, rootA.id, 'reply', on: a);
     router.route(firstTurn);
 
     final feed = LogbookReader(feeds.pathOf(loop1))

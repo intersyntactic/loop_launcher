@@ -15,7 +15,7 @@ void main() {
   final outcomeKind = Kind.parse(outcomeOfProposedActionKind)!;
   final turn = Kind.parse('turn')!;
 
-  Entry entry(Kind kind, ObjectId? previous, String body) {
+  Entry entry(Kind kind, ObjectId? previous, String body, {TrajectoryId? on}) {
     final recorded = Uint8List.fromList(
       utf8.encode('${kind.name}\n${previous?.hex ?? '-'}\n$body'),
     );
@@ -23,6 +23,7 @@ void main() {
       id: ObjectId.of(recorded),
       kind: kind,
       previous: previous,
+      trajectory: on,
       recorded: recorded,
     );
   }
@@ -34,9 +35,9 @@ void main() {
       proposalOf: proposalAnOutcomeAnswers,
     );
     final a = TrajectoryId.parse('a1' * 32)!;
-    final root = entry(turn, null, 'root');
+    final root = entry(turn, null, 'root', on: a);
     router.rooted(a, root);
-    final proposal = entry(turn, root.id, 'proposes');
+    final proposal = entry(turn, root.id, 'proposes', on: a);
     expect(router.route(proposal), a);
 
     final refused = entry(

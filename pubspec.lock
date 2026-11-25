@@ -213,10 +213,10 @@ packages:
     dependency: "direct main"
     description:
       name: is_logbook_client
-      sha256: aff53c968e53c1b707305adeb212bd700ca0c231fa1caee4774b5db52f8cc4b0
+      sha256: d787e3c82729ead68d84381c29d2fc388d4905b848d234a4b520ebee1a0c8040
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.0"
+    version: "0.4.0"
   is_logbook_format:
     dependency: transitive
     description:
