@@ -6,9 +6,9 @@ import 'package:is_shapes/is_shapes.dart' show TrajectoryId;
 
 /// Sorts the logbook's entries by trajectory, so each loop is handed its own
 /// and no other's: each admission that started it or was placed on it, its
-/// root, the entries on its chain, and the airlock's outcomes for its
-/// proposals. A relayed event, the bytes a stranger sent, is handed to no
-/// loop: its admission carries what was made of it.
+/// root, the entries the logbook says are on its chain, and the airlock's
+/// outcomes for its proposals. A relayed event, the bytes a stranger sent, is
+/// handed to no loop: its admission carries what was made of it.
 final class TrajectoryRouter {
   /// [proposalOf] names the proposal an outcome answers; null when the entry
   /// answers no proposal.
@@ -47,13 +47,12 @@ final class TrajectoryRouter {
             final proposal? => _trajectoryOf[proposal],
             null => null,
           }
-        : switch (entry.previous) {
-            final previous? => _trajectoryOf[previous],
-            null => null,
-          };
+        : entry.trajectory;
     if (trajectory == null) return null;
+    final history = _history[trajectory];
+    if (history == null) return null;
     if (!isOutcome) _trajectoryOf[entry.id] = trajectory;
-    _history[trajectory]!.add(entry);
+    history.add(entry);
     return trajectory;
   }
 

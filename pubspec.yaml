@@ -3,7 +3,7 @@ description: >-
   Starts each trajectory's agent loop: it follows the logbook for the docking
   station's admissions that start a trajectory, hands the trajectory a loop
   user and a suit from their pools, records that, and starts its loop.
-version: 0.5.5
+version: 0.6.0
 repository: https://github.com/intersyntactic/loop_launcher
 publish_to: none
 
@@ -16,7 +16,7 @@ dependencies:
   is_docking_station_api: ^0.7.0
   is_effects: ^0.15.0
   is_flight_rules: ^0.7.0
-  is_logbook_client: ^0.3.0
+  is_logbook_client: ^0.4.0
   is_shapes: ^0.6.0
 
 dev_dependencies:

@@ -111,7 +111,8 @@ final class LoopFeeds {
       ..add(
         ascii.encode(
           'entry ${entry.id.hex} ${entry.kind.name} '
-          '${entry.previous?.hex ?? '-'} ${entry.recorded.length}\n',
+          '${entry.previous?.hex ?? '-'} ${entry.recorded.length} '
+          '${entry.trajectory?.hex ?? '-'}\n',
         ),
       )
       ..add(entry.recorded);

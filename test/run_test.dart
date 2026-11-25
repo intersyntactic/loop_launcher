@@ -27,7 +27,12 @@ import 'package:test/test.dart';
 void main() {
   final turn = Kind.parse('turn')!;
   final returned = Kind.parse('returned')!;
-  Entry entry(Kind kind, ObjectId? previous, Uint8List body) {
+  Entry entry(
+    Kind kind,
+    ObjectId? previous,
+    Uint8List body, {
+    TrajectoryId? on,
+  }) {
     final recorded = Uint8List.fromList([
       ...utf8.encode('${kind.name}\n${previous?.hex ?? '-'}\n'),
       ...body,
@@ -36,6 +41,7 @@ void main() {
       id: ObjectId.of(recorded),
       kind: kind,
       previous: previous,
+      trajectory: on,
       recorded: recorded,
     );
   }
@@ -49,10 +55,11 @@ void main() {
       loopUser: LoopUser.parse('loop-$n')!,
       suit: Suit.parse('suit-$n')!,
     ).encode(),
+    on: trajectory,
   );
 
-  Entry said(ObjectId previous, String text) =>
-      entry(turn, previous, Uint8List.fromList(utf8.encode(text)));
+  Entry said(TrajectoryId on, ObjectId previous, String text) =>
+      entry(turn, previous, Uint8List.fromList(utf8.encode(text)), on: on);
 
   // Rules whose model calls may go out as [signIns], starting on the first,
   // with no web grants, no programs and no given tools.
@@ -213,7 +220,7 @@ void main() {
     final b = TrajectoryId.parse('b2' * 32)!;
     final rootA = assigned(a, mission, 1);
     final rootB = assigned(b, MissionId.parse('d4' * 32)!, 2);
-    final a1 = said(rootA.id, 'a1');
+    final a1 = said(a, rootA.id, 'a1');
     l.logbook
       ..add(rootA)
       ..add(rootB)
@@ -223,8 +230,8 @@ void main() {
     expect(l.delivered, isEmpty, reason: 'before caught up, history only');
     expect(l.router.history(a), [rootA, a1]);
 
-    final a2 = said(a1.id, 'a2');
-    final b1 = said(rootB.id, 'b1');
+    final a2 = said(a, a1.id, 'a2');
+    final b1 = said(b, rootB.id, 'b1');
     final outcome = entry(
       returned,
       null,
@@ -240,7 +247,7 @@ void main() {
 
     l.logbook
       ..add(ended(mission))
-      ..add(said(a2.id, 'late'));
+      ..add(said(a, a2.id, 'late'));
     await pumpEventQueue();
     expect(l.delivered, hasLength(3), reason: 'nothing after the end');
     expect(l.router.history(a), isEmpty);
