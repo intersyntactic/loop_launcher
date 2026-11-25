@@ -5,6 +5,7 @@ library;
 export 'src/loop_feeds.dart';
 export 'src/loop_limit_per_model_sign_in.dart';
 export 'src/pools.dart';
+export 'src/proposal_an_outcome_answers.dart';
 export 'src/run.dart';
 export 'src/starts_and_stops_trajectory_processes.dart';
 export 'src/trajectory_router.dart';

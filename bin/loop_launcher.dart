@@ -1,12 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:is_airlock_api/is_airlock_api.dart'
-    show
-        LoopUser,
-        Suit,
-        outcomeOfProposedActionKind,
-        readOutcomeOfProposedAction;
+    show LoopUser, Suit, outcomeOfProposedActionKind;
 import 'package:is_logbook_client/is_logbook_client.dart';
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 
@@ -72,21 +67,7 @@ Future<void> main() async {
   );
   final router = TrajectoryRouter(
     outcomeKinds: {Kind.parse(outcomeOfProposedActionKind)!},
-    // An action with no proposal is recorded under the same kind as a plain
-    // line; it answers no loop. The proposal's EntryId and the logbook's id
-    // are both the sha256 of its text.
-    proposalOf: (_, body) {
-      final String text;
-      try {
-        text = utf8.decode(body);
-      } on FormatException {
-        return null;
-      }
-      return switch (readOutcomeOfProposedAction(text)) {
-        (:final proposed, result: _) => ObjectId.parse(proposed.hex),
-        null => null,
-      };
-    },
+    proposalOf: proposalAnOutcomeAnswers,
   );
   final feeds = LoopFeeds(
     dir: feedDir,
