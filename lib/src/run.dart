@@ -228,7 +228,7 @@ Future<void> runLoopLauncher({
           when kind == UsersAssignedToTrajectory.kind:
         final users =
             UsersAssignedToTrajectory.decode(body) ??
-            (throw StateError('cannot read ${id.hex}'));
+            (throw EntryUnreadable(id, 'not users assigned to a trajectory'));
         pools.take(users, id);
         router.rooted(users.trajectory, item);
         if (caughtUp) deliver(users.trajectory, item);
@@ -240,15 +240,15 @@ Future<void> runLoopLauncher({
                 .trajectory,
           );
         } on FormatException catch (e) {
-          throw StateError('cannot read ${id.hex}: $e');
+          throw EntryUnreadable(id, e.message);
         }
       case Entry(:final kind) when !DecisionEntryKind.all.contains(kind):
         if (router.route(item) case final trajectory? when caughtUp) {
           deliver(trajectory, item);
         }
       case Entry(:final kind, :final id, recorded: final bytes, :final body):
-        switch (decodeDecision(kind, body) ??
-            (throw StateError('cannot read the ${kind.name} ${id.hex}'))) {
+        switch (_reading(id, () => decodeDecision(kind, body)) ??
+            (throw EntryUnreadable(id, 'not a ${kind.name} decision'))) {
           case EventAdmittedToMission(
             placement: StartsTrajectory(mission: final placement),
             :final rules,
@@ -258,12 +258,15 @@ Future<void> runLoopLauncher({
               InMission(:final mission) => mission,
               StartsMission() => MissionId.of(bytes),
             };
-            final typed = FlightRules.fromJson(
-              rules ??
-                  (throw StateError(
-                    '${id.hex} starts a trajectory with '
-                    'no rules',
-                  )),
+            final typed = _reading(
+              id,
+              () => FlightRules.fromJson(
+                rules ??
+                    (throw EntryUnreadable(
+                      id,
+                      'starts a trajectory with no rules',
+                    )),
+              ),
             ).whatMayLeaveThisMachine;
             started[trajectory] = (mission, typed);
             router.started(trajectory, item);
@@ -328,3 +331,24 @@ Future<void> runLoopLauncher({
 }
 
 void _later(Duration after, void Function() then) => Timer(after, then);
+
+/// An entry loop_launcher cannot read, such as one written under rules
+/// this version no longer reads. Reading the logbook again meets it again.
+final class EntryUnreadable implements Exception {
+  const EntryUnreadable(this.entry, this.why);
+
+  final ObjectId entry;
+  final String why;
+
+  @override
+  String toString() => 'cannot read ${entry.hex}: $why';
+}
+
+/// [read]'s value, with a [FormatException] it throws as [EntryUnreadable].
+T _reading<T>(ObjectId entry, T Function() read) {
+  try {
+    return read();
+  } on FormatException catch (e) {
+    throw EntryUnreadable(entry, e.message);
+  }
+}

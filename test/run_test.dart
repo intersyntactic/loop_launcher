@@ -78,9 +78,9 @@ void main() {
   }
 
   // An admission that starts a mission and its first trajectory, under
-  // [rulesJson] for [signIns]. [n] keeps each one's bytes, and so its ids,
-  // its own.
-  Entry admitted(int n, List<String> signIns) => entry(
+  // [rulesJson] for [signIns], or [rules] when given. [n] keeps each one's
+  // bytes, and so its ids, its own.
+  Entry admitted(int n, List<String> signIns, {String? rules}) => entry(
     DecisionEntryKind.eventAdmittedToMission,
     null,
     Uint8List.fromList(
@@ -92,7 +92,7 @@ void main() {
         '"key":"message:$n","node":{"shape":"UserSaid",'
         '"author":"teams:t/p","source":"19:x;messageid=$n|1","text":"hi"}},'
         '"startsTrajectory":true,"startsMission":true,'
-        '"rules":${rulesJson(signIns)},'
+        '"rules":${rules ?? rulesJson(signIns)},'
         '"startsTurn":true}',
       ),
     ),
@@ -593,6 +593,19 @@ void main() {
 
     await l.logbook.close();
     await l.run;
+  });
+
+  test('an admission under rules this version cannot read stops it, naming '
+      'the entry', () async {
+    final l = launch(users: 1, loopLimits: 'team:4');
+    final old = admitted(1, ['team'], rules: '{"whatMayLeaveThisMachine":{}}');
+    final stopped = expectLater(
+      l.run,
+      throwsA(isA<EntryUnreadable>().having((e) => e.entry, 'entry', old.id)),
+    );
+    l.logbook.add(old);
+    await stopped;
+    expect(l.machine.calls, isEmpty);
   });
 
   test('a try due after the logbook ends does nothing', () async {

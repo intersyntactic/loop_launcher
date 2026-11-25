@@ -14,6 +14,18 @@ import 'package:is_loop_launcher/is_loop_launcher.dart';
 /// restart on it.
 const badConfig = 78;
 
+/// An entry this version cannot read; starting again meets it again.
+const unreadableEntry = 65;
+
+/// A write the logbook did not answer or did not finish; starting again
+/// sends it again, which is safe.
+const logbookUnavailable = 75;
+
+Never _stop(int code, String why) {
+  stderr.writeln('loop_launcher: $why');
+  exit(code);
+}
+
 /// Printed once every loop's feed is bound.
 const startupLine = 'loop_launcher: feeds bound, following the logbook';
 
@@ -84,23 +96,34 @@ Future<void> main() async {
   await feeds.bind(loopUsers);
   stdout.writeln(startupLine);
 
-  await runLoopLauncher(
-    subscribe: reader.subscribe,
-    send: (kind, previous, body) async =>
-        switch (await writer.write(kind, body, previous: previous)) {
-          Written(:final entry) || AlreadyRecorded(:final entry) => entry,
-          NotTip(:final tip) => throw StateError('$kind: not tip, $tip is'),
-          WriteRefused(:final why) => throw StateError('$kind refused: $why'),
-          WriteFailed(:final why) => throw StateError('$kind failed: $why'),
-          Unanswered(:final why) => throw StateError('$kind unanswered: $why'),
-        },
-    pools: pools,
-    router: router,
-    deliver: feeds.deliver,
-    loopLimits: loopLimits,
-    machine: SystemdUnits(),
-    say: (line) => stdout.writeln(line),
-  );
+  try {
+    await runLoopLauncher(
+      subscribe: reader.subscribe,
+      send: (kind, previous, body) async =>
+          switch (await writer.write(kind, body, previous: previous)) {
+            Written(:final entry) || AlreadyRecorded(:final entry) => entry,
+            // Everything loop_launcher writes starts a chain of its own.
+            NotTip(:final tip) => throw StateError('$kind: not tip, $tip is'),
+            WriteRefused(:final why) => _stop(badConfig, '$kind refused: $why'),
+            WriteFailed(:final why) => _stop(
+              logbookUnavailable,
+              '$kind failed: $why',
+            ),
+            Unanswered(:final why) => _stop(
+              logbookUnavailable,
+              '$kind unanswered: $why',
+            ),
+          },
+      pools: pools,
+      router: router,
+      deliver: feeds.deliver,
+      loopLimits: loopLimits,
+      machine: SystemdUnits(),
+      say: (line) => stdout.writeln(line),
+    );
+  } on EntryUnreadable catch (e) {
+    _stop(unreadableEntry, '$e');
+  }
   stderr.writeln('loop_launcher: the logbook stream ended');
   exit(1);
 }
