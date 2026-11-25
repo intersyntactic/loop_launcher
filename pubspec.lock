@@ -177,6 +177,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
+  is_conversation_reply_vocabulary:
+    dependency: transitive
+    description:
+      name: is_conversation_reply_vocabulary
+      sha256: "2c2f7d8e460a15ace0fcdd92c2a22aed51e8f92dedd507902d310a70573e50cf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   is_conversation_shapes:
     dependency: transitive
     description:
@@ -189,10 +197,10 @@ packages:
     dependency: "direct main"
     description:
       name: is_docking_station_api
-      sha256: "464cf0649057724fc83a8efc413f1d4381a0d95e90465438257828cdc3e8a84e"
+      sha256: "0bd0de5c076f7321415696a5761d3f86cf933659c66565b0c16e221a1775f021"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.0"
+    version: "0.8.0"
   is_effects:
     dependency: "direct main"
     description:
@@ -241,14 +249,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.0"
-  is_reply_vocabulary:
-    dependency: transitive
-    description:
-      name: is_reply_vocabulary
-      sha256: da0e47b45ee22fef87e6b81dcb8a24adf954c46ff50b62952cd12f5699398e65
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.0"
   is_shapes:
     dependency: "direct main"
     description:
