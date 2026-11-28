@@ -42,4 +42,13 @@ void main() {
     expect(read(bytes.replaceFirst('"trajectory"', '"journeyPath"')), isNull);
     expect(read(bytes.replaceFirst('"mission"', '"journey"')), isNull);
   });
+
+  test('a body naming a key twice is refused, not read as its last', () {
+    UsersAssignedToTrajectory? read(String s) =>
+        UsersAssignedToTrajectory.decode(Uint8List.fromList(utf8.encode(s)));
+    final twice =
+        '{"trajectory":"$trajectory","mission":"$mission",'
+        '"loopUser":"loop-3","loopUser":"loop-4","suit":"suit-12"}';
+    expect(read(twice), isNull);
+  });
 }

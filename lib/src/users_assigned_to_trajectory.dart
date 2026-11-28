@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:checked_json/checked_json.dart'
+    show decodeJsonRefusingDuplicateKeysAndUnsafeIntegers;
 import 'package:is_airlock_api/is_airlock_api.dart' show LoopUser, Suit;
 import 'package:is_logbook_client/is_logbook_client.dart' show Kind;
 import 'package:is_shapes/is_shapes.dart' show MissionId, TrajectoryId;
@@ -22,7 +24,9 @@ final class UsersAssignedToTrajectory {
   static UsersAssignedToTrajectory? decode(Uint8List body) {
     final Object? json;
     try {
-      json = jsonDecode(utf8.decode(body));
+      json = decodeJsonRefusingDuplicateKeysAndUnsafeIntegers(
+        utf8.decode(body),
+      );
     } on FormatException {
       return null;
     }
