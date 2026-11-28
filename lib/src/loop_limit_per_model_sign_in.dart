@@ -1,4 +1,5 @@
-import 'package:is_effects/is_effects.dart' show ModelSignInName;
+import 'package:is_model_vocabulary/is_model_vocabulary.dart'
+    show ModelSignInName;
 
 /// How many trajectories holding loop users may at once be allowed to make
 /// model calls as each sign-in.

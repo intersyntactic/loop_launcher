@@ -1,5 +1,6 @@
-import 'package:is_effects/is_effects.dart' show ModelSignInName;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
+import 'package:is_model_vocabulary/is_model_vocabulary.dart'
+    show ModelSignInName;
 import 'package:test/test.dart';
 
 void main() {

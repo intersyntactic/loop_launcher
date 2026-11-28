@@ -13,12 +13,12 @@ import 'package:is_docking_station_api/is_docking_station_api.dart'
         OperatorName,
         TrajectoryClosedByOperator,
         encodeDecision;
-import 'package:is_effects/is_effects.dart'
-    show ModelAndSignIn, ModelName, ModelSignInName;
 import 'package:is_flight_rules/is_flight_rules.dart'
     show FlightRules, ProgramsNetwork, WhatMayLeaveThisMachine;
 import 'package:is_logbook_client/is_logbook_client.dart'
     show CaughtUp, Entry, Kind, ObjectId, Subscribed;
+import 'package:is_model_vocabulary/is_model_vocabulary.dart'
+    show ModelAndSignIn, ModelName, ModelSignInName;
 import 'package:is_loop_launcher/is_loop_launcher.dart';
 import 'package:is_shapes/is_shapes.dart'
     show DecidedBy, MissionId, TrajectoryId;
