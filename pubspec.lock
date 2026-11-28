@@ -45,10 +45,10 @@ packages:
     dependency: "direct main"
     description:
       name: checked_json
-      sha256: "6e98ee4c293ee7ed5d1a76411823c7b43aee1fa969b63cb896c519814dbdcfbf"
+      sha256: f945a6154f5737707c35f901dd37a7c5d3bc8a8a4dc2104f55abb68745b84a77
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.1"
+    version: "0.4.0"
   cli_config:
     dependency: transitive
     description:
@@ -157,18 +157,18 @@ packages:
     dependency: "direct main"
     description:
       name: is_airlock_api
-      sha256: cd4f08e4e838ef2fa28521049640dab17aed337bee9cdaea363a9a1881baa21c
+      sha256: ec8889ce9113ccdcb014cb4ba932d94f1a5e038dc9a55fc87be06aef9801cd3f
       url: "https://pub.dev"
     source: hosted
-    version: "0.18.1"
+    version: "0.25.0"
   is_annotation_shapes:
     dependency: transitive
     description:
       name: is_annotation_shapes
-      sha256: eaba8ab69040d0612d12bbec7315b567015d4369dd19c91c2b4dd14223c7a2f5
+      sha256: e93d281630903cc78bff46315d77fddb61230114856e7efad42f223fb1dc3de5
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.2"
+    version: "0.5.0"
   is_content_id:
     dependency: transitive
     description:
@@ -177,46 +177,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
-  is_conversation_reply_vocabulary:
+  is_conversation_vocabulary:
     dependency: transitive
     description:
-      name: is_conversation_reply_vocabulary
-      sha256: "2c2f7d8e460a15ace0fcdd92c2a22aed51e8f92dedd507902d310a70573e50cf"
+      name: is_conversation_vocabulary
+      sha256: "743fa993dc7b7194a507dec64c2df3b8e025243272776b21af5c55736db3f445"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
-  is_conversation_shapes:
-    dependency: transitive
-    description:
-      name: is_conversation_shapes
-      sha256: "9cc49a7f1bf6ddb077a86516533b706b6c2ac08856b036a7cfcec67286ba09c1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.3"
+    version: "0.2.0"
   is_docking_station_api:
     dependency: "direct main"
     description:
       name: is_docking_station_api
-      sha256: "0bd0de5c076f7321415696a5761d3f86cf933659c66565b0c16e221a1775f021"
+      sha256: "605a6a5fc5aceefaaa9036edce57d7f6cfe757038903c05125b1a0ea8cbef085"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0"
+    version: "0.10.0"
   is_effects:
     dependency: "direct main"
     description:
       name: is_effects
-      sha256: bea7444e36b51bf749b2fa0fc3e69a7f9d49b657475e6be5f792d3d046c9175c
+      sha256: "7fbcde3af0d2a77dd6c39e517167e473ad711daae0423588df72c9c715cb6177"
       url: "https://pub.dev"
     source: hosted
-    version: "0.15.0"
+    version: "0.19.0"
   is_flight_rules:
     dependency: "direct main"
     description:
       name: is_flight_rules
-      sha256: "67e10e598f484c0b9e93035275a94862a82af3261f48dcf688899cc86bea7855"
+      sha256: "1282216c406e9fa3986f04798cf0a3ec82288404c63e062a550f958c22baa2d5"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.0"
+    version: "0.11.0"
   is_logbook_client:
     dependency: "direct main"
     description:
@@ -237,10 +229,10 @@ packages:
     dependency: transitive
     description:
       name: is_model_vocabulary
-      sha256: "48927abc9d91422f92e370dc8a7698a2ee29c4bfa44712f5e88c9ab126185e57"
+      sha256: "10f98c4205552175128cefc1bf95dd93bd969d2018867b36878ee0af5fee10c2"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0"
+    version: "0.4.0"
   is_path_confinement:
     dependency: transitive
     description:
@@ -265,14 +257,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.0"
-  is_tools_api:
+  is_tool_definition_vocabulary:
     dependency: transitive
     description:
-      name: is_tools_api
-      sha256: d9b98198b03b0d249a67a0ce4babf50bc2dd0896188ed069b4fe731ef8d7c389
+      name: is_tool_definition_vocabulary
+      sha256: "2fd61c836709fe5182732bb03a26f4fc57fc7191d6bfcedc3c4ff070f322982c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.7.0"
   is_web_address_vocabulary:
     dependency: transitive
     description:
